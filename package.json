@@ -1,0 +1,26 @@
+{
+  "name": "@helioviewer/sun",
+  "version": "0.4.0",
+  "description": "Model sun based on current observations from helioviewer.org for threejs.",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "hvsun-install": "./bin/install.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Helioviewer-Project/sun"
+  },
+  "author": "Daniel Garcia Briseno",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/three": "^0.172.0",
+    "prettier": "^3.2.4",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "three": "^0.172.0"
+  }
+}
