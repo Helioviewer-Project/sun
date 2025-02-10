@@ -83,6 +83,9 @@ uniform float transparent_threshold;
 //  treats each slightly different)
 uniform bool backside;
 
+// flag to determine if we should render only the emission.
+uniform bool emission;
+
 // v_uv is the uv we're working on, received from the vertex shader.
 // varying means it is a variable coming from the vertex shader.
 // as opposed to uniform, which means it is a global constant.
@@ -163,6 +166,15 @@ void main() {
         // transparent
         color = vec4(0, 0, 0, 0);
     }
+
+    bool is_emission = (pow(0.5 - v_uv.x, 2.0) + pow(0.5 - v_uv.y, 2.0)) > 0.0625;
+	if (is_emission && !emission) {
+		discard;
+	}
+	if (emission && is_inside_hemisphere) {
+		discard;
+	}
+
 
     // Update the output color to what we've calculated above.
 	gl_FragColor = color;

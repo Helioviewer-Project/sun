@@ -42,6 +42,7 @@ async function _GetBackside(texture: Texture, scale: number) {
       x_offset: { value: 0.0 },
       y_offset: { value: 0.0 },
       backside: { value: true },
+      emission: { value: true },
       opacity: { value: 1 },
       transparent_threshold: { value: 0.05 },
     },
@@ -51,13 +52,43 @@ async function _GetBackside(texture: Texture, scale: number) {
   // Enable transparency, without this, making pixels transparent will
   // just make them white.
   shader.transparent = true;
+  shader.blending = AdditiveBlending;
   // Set the shader to apply to the backside, by default it only applies
   // to the front side.
   shader.side = BackSide;
-  shader.blending = AdditiveBlending;
   // Construct the mesh and return it.
   const backside = new Mesh(geometry, shader);
   return backside;
+}
+
+async function CreateEmission(texture: Texture, jp2info: JP2Info) {
+  let scale = _ComputeMeshScale(jp2info);
+  // Load the backside of the mesh in parallel
+  // Load the model
+  let geometry = await LoadMesh(SunConfig.model_path);
+
+  // Create the shader, this is where the uniforms that appear
+  // in the shader are set.
+  let shader = new ShaderMaterial({
+    uniforms: {
+      tex: { value: texture },
+      scale: { value: scale },
+      x_offset: { value: 0.0 },
+      y_offset: { value: 0.0 },
+      backside: { value: false },
+      emission: { value: true },
+      opacity: { value: 1 },
+      transparent_threshold: { value: 0.05 },
+    },
+    vertexShader: SolarVertexShader,
+    fragmentShader: SolarFragmentShader,
+  });
+  // Enable transparency, without this, making pixels transparent will
+  // just make them white.
+  shader.transparent = true;
+  shader.blending = AdditiveBlending;
+  // Construct the 3js mesh
+  return new Mesh(geometry, shader);
 }
 
 /**
@@ -80,6 +111,7 @@ async function CreateHemisphereWithTexture(texture: Texture, jp2info: JP2Info) {
       x_offset: { value: 0.0 },
       y_offset: { value: 0.0 },
       backside: { value: false },
+      emission: { value: false },
       opacity: { value: 1 },
       transparent_threshold: { value: 0.05 },
     },
@@ -92,14 +124,16 @@ async function CreateHemisphereWithTexture(texture: Texture, jp2info: JP2Info) {
   shader.blending = AdditiveBlending;
   // Construct the 3js mesh
   const sphere = new Mesh(geometry, shader);
+  const emission = await CreateEmission(texture, jp2info);
   const backside = await _GetBackside(texture, scale);
   // Construct the backside of the mesh
   // Add both sphere and backside models to a group, so all operations
   // to the group apply to everything inside.
   const sphere_group = new Group();
   sphere_group.add(sphere);
+  sphere_group.add(emission);
   sphere_group.add(await backside);
-  sphere_group.scale.setScalar(0.02);
+  sphere_group.scale.setScalar(0.04);
   return sphere_group;
 }
 
@@ -133,6 +167,7 @@ async function CreatePlaneWithTexture(texture: Texture, jp2info: JP2Info) {
     fragmentShader: LascoFragmentShader,
   });
   shader.transparent = true;
+  shader.blending = AdditiveBlending;
   const mesh = new Mesh(geometry, shader);
   // API expects all meshes to be groups, so add this mesh to a single group
   const group = new Group();

@@ -184,7 +184,7 @@ class Sun extends Object3D {
    * @param value Number between 0 and 1, 0 is transparent and 1 is opaque.
    */
   set opacity(value: number) {
-    UpdateModelOpacity(this._model, value);
+    this.ready.then(() => { UpdateModelOpacity(this._model, value); })
   }
 
   /**

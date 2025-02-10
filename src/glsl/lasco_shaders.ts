@@ -73,9 +73,6 @@ uniform float x_offset;
 // currently unused, can be used to shift the texture in the y axis
 uniform float y_offset;
 
-// Sets the opacity of the texture
-uniform float opacity;
-
 // v_uv is the uv we're working on, received from the vertex shader.
 // varying means it is a variable coming from the vertex shader.
 // as opposed to uniform, which means it is a global constant.
