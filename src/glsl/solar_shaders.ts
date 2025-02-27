@@ -86,6 +86,9 @@ uniform bool backside;
 // flag to determine if we should render only the emission.
 uniform bool emission;
 
+// flag to determine if we should render only the emission.
+uniform float rotate_degrees;
+
 // v_uv is the uv we're working on, received from the vertex shader.
 // varying means it is a variable coming from the vertex shader.
 // as opposed to uniform, which means it is a global constant.
@@ -141,12 +144,15 @@ void main() {
 	#include <premultiplied_alpha_fragment>
 	#include <dithering_fragment>
 
-    // I stumbled upon this function, but haven't analyzed it much. But it allows me to scale the
-    // the mesh against the texture coordinates so that the uv coordinates map to a different part
-    // of the mesh, as if it was scaled.
+	// This scales the image to the appropriate size so that emission is off the main hemisphere.
     vec2 scaled_uv = (vec2(v_uv.x + x_offset, v_uv.y + y_offset) - vec2(0.5)) * scale + vec2(0.5);
-    // For reasons unknown (probably blender) the x is flipped, so flip it back here.
-    scaled_uv.x = 1.0 - scaled_uv.x;
+
+	// Apply rotation to the image
+	float rotation_rad = radians(rotate_degrees);
+	vec2 center = vec2(0.5, 0.5);
+	vec2 centered_uv = scaled_uv - center;
+	mat2 rotation_matrix = mat2(cos(rotation_rad), -sin(rotation_rad), sin(rotation_rad), cos(rotation_rad));
+	scaled_uv = rotation_matrix * centered_uv + center;
 
     if (scaled_uv.x > 1.0 || scaled_uv.y > 1.0 || scaled_uv.x < 0.0 || scaled_uv.y < 0.0) {
         discard;

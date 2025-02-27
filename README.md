@@ -13,7 +13,7 @@ npx hvsun-install "<install directory>"
 `hvsun-install` will copy the required 3D model to the given location. This
 model is required to render the sun.
 
-By default, when you create a new instance of a sun, it will search for the model at `resources/models/sun_model.gltf`.
+By default, when you create a new instance of a sun, it will search for the model at `resources/models/zit.glb`.
 If you install the models to a different directory, then you can specify the new location in your app via:
 
 ```js

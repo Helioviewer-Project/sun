@@ -34,9 +34,6 @@ function _ExtractMeshFromGLTF(gltf: GLTF): BufferGeometry {
     }
   });
 
-  // Flip the geometry so the front of the sun is the front.
-  // Without this, threejs thinks the flat side is the front.
-  mesh.applyMatrix4(new Matrix4().makeRotationX(Math.PI));
   return mesh;
 }
 

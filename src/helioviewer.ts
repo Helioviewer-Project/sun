@@ -7,6 +7,12 @@ interface JP2Info {
   solar_center_x: number;
   /** y coordinate of the center of the sun within the jp2 */
   solar_center_y: number;
+  /** x offset */
+  offset_x: number;
+  /** y offset */
+  offset_y: number;
+  /** Rotation that needs to be applied to the image */
+  solar_rotation: number;
   /** Radius of the sun in pixels */
   solar_radius: number;
 }
@@ -118,6 +124,7 @@ class Helioviewer {
       time.toISOString();
     let result = await fetch(api_url);
     let image = await result.json();
+    console.log(image);
     // Add the Z to indicate the date is a UTC date. Helioviewer works in UTC
     // but doesn't use the formal specification for it.
     return {
@@ -128,6 +135,9 @@ class Helioviewer {
         height: image.height,
         solar_center_x: image.refPixelX,
         solar_center_y: image.refPixelY,
+        offset_x: image.offsetX,
+        offset_y: image.offsetY,
+        solar_rotation: image.rotation,
         solar_radius: image.rsun,
       },
     };

@@ -7,7 +7,10 @@ function usage() {
   console.log("  npx hvsun-install <directory>");
   console.log("");
   console.log(
-    "This script installs the sun models into the specified directory",
+    "This script installs the sun models into the specified directory.",
+  );
+  console.log(
+    "defaults to /resources/models"
   );
 }
 
@@ -19,11 +22,5 @@ function install(file, dir) {
   fs.copyFileSync(`${pathToModels}/${file}`, `${dir}/${file}`);
 }
 
-if (process.argv.length < 3) {
-  console.error("Missing directory parameter.");
-  usage();
-}
-
-let target = process.argv[2];
-install("sun_model.gltf", target);
-install("sun_model.bin", target);
+let target = process.argv[2] ?? "resources/models";
+install("zit.glb", target);

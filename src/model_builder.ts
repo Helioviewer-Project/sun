@@ -8,6 +8,7 @@ import {
   Material,
   Object3D,
   AdditiveBlending,
+  SphereGeometry,
 } from "three";
 import { PLANE_SOURCES } from "./sourceinfo";
 import { LoadMesh } from "./mesh_loader";
@@ -29,7 +30,7 @@ import { SunConfig } from "./config";
  * @returns {Mesh}
  * @private
  */
-async function _GetBackside(texture: Texture, scale: number) {
+async function _GetBackside(texture: Texture, scale: number, rotation: number, offsets: Offsets) {
   // Load the mesh
   let geometry = await LoadMesh(SunConfig.model_path);
 
@@ -39,10 +40,11 @@ async function _GetBackside(texture: Texture, scale: number) {
     uniforms: {
       tex: { value: texture },
       scale: { value: scale },
-      x_offset: { value: 0.0 },
-      y_offset: { value: 0.0 },
+      x_offset: { value: offsets.x },
+      y_offset: { value: offsets.y },
       backside: { value: true },
       emission: { value: true },
+      rotate_degrees: { value: rotation },
       opacity: { value: 1 },
       transparent_threshold: { value: 0.05 },
     },
@@ -61,7 +63,12 @@ async function _GetBackside(texture: Texture, scale: number) {
   return backside;
 }
 
-async function CreateEmission(texture: Texture, jp2info: JP2Info) {
+interface Offsets {
+  x: number;
+  y: number;
+};
+
+async function CreateEmission(texture: Texture, jp2info: JP2Info, offsets: Offsets) {
   let scale = _ComputeMeshScale(jp2info);
   // Load the backside of the mesh in parallel
   // Load the model
@@ -73,11 +80,12 @@ async function CreateEmission(texture: Texture, jp2info: JP2Info) {
     uniforms: {
       tex: { value: texture },
       scale: { value: scale },
-      x_offset: { value: 0.0 },
-      y_offset: { value: 0.0 },
+      x_offset: { value: offsets.x },
+      y_offset: { value: offsets.y },
       backside: { value: false },
       emission: { value: true },
       opacity: { value: 1 },
+      rotate_degrees: { value: jp2info.solar_rotation },
       transparent_threshold: { value: 0.05 },
     },
     vertexShader: SolarVertexShader,
@@ -91,6 +99,13 @@ async function CreateEmission(texture: Texture, jp2info: JP2Info) {
   return new Mesh(geometry, shader);
 }
 
+function _ComputeOffsets(jp2info: JP2Info) {
+  return {
+    x: jp2info.offset_x / jp2info.width / 8,
+    y: -jp2info.offset_y / jp2info.height / 8
+  };
+}
+
 /**
  * Creates a hemisphere with the given texture applied
  * @param {Texture} texture
@@ -98,21 +113,24 @@ async function CreateEmission(texture: Texture, jp2info: JP2Info) {
  */
 async function CreateHemisphereWithTexture(texture: Texture, jp2info: JP2Info) {
   let scale = _ComputeMeshScale(jp2info);
+  let offsets = _ComputeOffsets(jp2info);
   // Load the backside of the mesh in parallel
   // Load the model
   let geometry = await LoadMesh(SunConfig.model_path);
 
   // Create the shader, this is where the uniforms that appear
   // in the shader are set.
+  console.log(jp2info);
   let shader = new ShaderMaterial({
     uniforms: {
       tex: { value: texture },
       scale: { value: scale },
-      x_offset: { value: 0.0 },
-      y_offset: { value: 0.0 },
+      x_offset: { value: offsets.x },
+      y_offset: { value: offsets.y },
       backside: { value: false },
       emission: { value: false },
       opacity: { value: 1 },
+      rotate_degrees: { value: jp2info.solar_rotation },
       transparent_threshold: { value: 0.05 },
     },
     vertexShader: SolarVertexShader,
@@ -124,8 +142,8 @@ async function CreateHemisphereWithTexture(texture: Texture, jp2info: JP2Info) {
   shader.blending = AdditiveBlending;
   // Construct the 3js mesh
   const sphere = new Mesh(geometry, shader);
-  const emission = await CreateEmission(texture, jp2info);
-  const backside = await _GetBackside(texture, scale);
+  const emission = await CreateEmission(texture, jp2info, offsets);
+  const backside = await _GetBackside(texture, scale, jp2info.solar_rotation, offsets);
   // Construct the backside of the mesh
   // Add both sphere and backside models to a group, so all operations
   // to the group apply to everything inside.
@@ -133,7 +151,6 @@ async function CreateHemisphereWithTexture(texture: Texture, jp2info: JP2Info) {
   sphere_group.add(sphere);
   sphere_group.add(emission);
   sphere_group.add(await backside);
-  sphere_group.scale.setScalar(0.04);
   return sphere_group;
 }
 
