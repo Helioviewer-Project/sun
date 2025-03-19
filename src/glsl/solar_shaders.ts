@@ -83,6 +83,9 @@ uniform float transparent_threshold;
 //  treats each slightly different)
 uniform bool backside;
 
+// Aspect ratio
+uniform float aspect_ratio;
+
 // flag to determine if we should render only the emission.
 uniform bool emission;
 
@@ -145,14 +148,26 @@ void main() {
 	#include <dithering_fragment>
 
 	// This scales the image to the appropriate size so that emission is off the main hemisphere.
-    vec2 scaled_uv = (vec2(v_uv.x + x_offset, v_uv.y + y_offset) - vec2(0.5)) * scale + vec2(0.5);
+	vec2 scaled_uv = v_uv;
+	scaled_uv -= vec2(0.5);
+	scaled_uv /= scale;
+	// scaled_uv /= scale;
+	// Apply aspect ratio to image
+	if (aspect_ratio > 1.0) {
+		scaled_uv.x = scaled_uv.x / (aspect_ratio);
+	} else {
+		scaled_uv.y = scaled_uv.y * aspect_ratio;
+	}
+
+	scaled_uv.x += x_offset;
+	scaled_uv.y += y_offset;
 
 	// Apply rotation to the image
-	float rotation_rad = radians(rotate_degrees);
-	vec2 center = vec2(0.5, 0.5);
-	vec2 centered_uv = scaled_uv - center;
-	mat2 rotation_matrix = mat2(cos(rotation_rad), -sin(rotation_rad), sin(rotation_rad), cos(rotation_rad));
-	scaled_uv = rotation_matrix * centered_uv + center;
+	// float rotation_rad = radians(rotate_degrees);
+	// vec2 center = vec2(0.5);
+	// vec2 centered_uv = scaled_uv - center;
+	// mat2 rotation_matrix = mat2(cos(rotation_rad), -sin(rotation_rad), sin(rotation_rad), cos(rotation_rad));
+	// scaled_uv = rotation_matrix * centered_uv + center;
 
     if (scaled_uv.x > 1.0 || scaled_uv.y > 1.0 || scaled_uv.x < 0.0 || scaled_uv.y < 0.0) {
         discard;
@@ -182,8 +197,11 @@ void main() {
 	}
 
 
+
+
     // Update the output color to what we've calculated above.
 	gl_FragColor = color;
+	// gl_FragColor.rgb += vec3(0.1);
 
     // Uncomment this line below to visualize the UVs
     // gl_FragColor = vec4(v_uv.x, v_uv.y, 0, 1);

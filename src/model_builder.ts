@@ -30,7 +30,7 @@ import { SunConfig } from "./config";
  * @returns {Mesh}
  * @private
  */
-async function _GetBackside(texture: Texture, scale: number, rotation: number, offsets: Offsets) {
+async function _GetBackside(texture: Texture, scale: number, rotation: number, offsets: Offsets, aspect: number) {
   // Load the mesh
   let geometry = await LoadMesh(SunConfig.model_path);
 
@@ -40,6 +40,7 @@ async function _GetBackside(texture: Texture, scale: number, rotation: number, o
     uniforms: {
       tex: { value: texture },
       scale: { value: scale },
+      aspect_ratio: { value: aspect },
       x_offset: { value: offsets.x },
       y_offset: { value: offsets.y },
       backside: { value: true },
@@ -73,6 +74,7 @@ async function CreateEmission(texture: Texture, jp2info: JP2Info, offsets: Offse
   // Load the backside of the mesh in parallel
   // Load the model
   let geometry = await LoadMesh(SunConfig.model_path);
+  const aspect = jp2info.width / jp2info.height;
 
   // Create the shader, this is where the uniforms that appear
   // in the shader are set.
@@ -82,6 +84,7 @@ async function CreateEmission(texture: Texture, jp2info: JP2Info, offsets: Offse
       scale: { value: scale },
       x_offset: { value: offsets.x },
       y_offset: { value: offsets.y },
+      aspect_ratio: { value: aspect },
       backside: { value: false },
       emission: { value: true },
       opacity: { value: 1 },
@@ -100,10 +103,11 @@ async function CreateEmission(texture: Texture, jp2info: JP2Info, offsets: Offse
 }
 
 function _ComputeOffsets(jp2info: JP2Info) {
-  return {
-    x: jp2info.offset_x / jp2info.width / 8,
-    y: -jp2info.offset_y / jp2info.height / 8
-  };
+  const offset = {
+    x: jp2info.solar_center_x / jp2info.width,
+    y: jp2info.solar_center_y / jp2info.height
+  }
+  return offset;
 }
 
 /**
@@ -112,19 +116,20 @@ function _ComputeOffsets(jp2info: JP2Info) {
  * @param {JP2info} jp2 metadata about this texture for positioning
  */
 async function CreateHemisphereWithTexture(texture: Texture, jp2info: JP2Info) {
-  let scale = _ComputeMeshScale(jp2info);
-  let offsets = _ComputeOffsets(jp2info);
+  const scale = _ComputeMeshScale(jp2info);
+  const offsets = _ComputeOffsets(jp2info);
+  const aspect = jp2info.width / jp2info.height;
   // Load the backside of the mesh in parallel
   // Load the model
   let geometry = await LoadMesh(SunConfig.model_path);
 
   // Create the shader, this is where the uniforms that appear
   // in the shader are set.
-  console.log(jp2info);
   let shader = new ShaderMaterial({
     uniforms: {
       tex: { value: texture },
       scale: { value: scale },
+      aspect_ratio: { value: aspect },
       x_offset: { value: offsets.x },
       y_offset: { value: offsets.y },
       backside: { value: false },
@@ -143,7 +148,7 @@ async function CreateHemisphereWithTexture(texture: Texture, jp2info: JP2Info) {
   // Construct the 3js mesh
   const sphere = new Mesh(geometry, shader);
   const emission = await CreateEmission(texture, jp2info, offsets);
-  const backside = await _GetBackside(texture, scale, jp2info.solar_rotation, offsets);
+  const backside = await _GetBackside(texture, scale, jp2info.solar_rotation, offsets, aspect);
   // Construct the backside of the mesh
   // Add both sphere and backside models to a group, so all operations
   // to the group apply to everything inside.
@@ -232,17 +237,10 @@ function UpdateModelTexture(
  * @private
  */
 function _ComputeMeshScale(jp2info: JP2Info) {
-  // Currently assumes the sun is always centered in the image.
-  // if it's not, this code will need to be updated to handle those offsets
-  let diameter = jp2info.solar_radius * 2;
-  let sun_image_ratio = diameter / jp2info.width;
-  let target_width_ratio = 0.5;
-  // We need the hemisphere on the mesh (which is 50% (0.5) of the width)
-  // to be the same as the width of the sun in the texture so that it fits perfectly
-  // To achieve this we take the width of the sun relative to the width of the image, and create
-  // a multiplier so that the with of the hemisphere matches the width of the sun relative to
-  // the width of the mesh.
-  return sun_image_ratio / target_width_ratio;
+  /**
+   * See readme for notes about this computation.
+   */
+  return Math.min(jp2info.width, jp2info.height) / (4*jp2info.solar_radius);
 }
 
 /**
