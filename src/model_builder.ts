@@ -8,7 +8,7 @@ import {
   Material,
   Object3D,
   AdditiveBlending,
-  SphereGeometry,
+  MeshBasicMaterial,
 } from "three";
 import { PLANE_SOURCES } from "./sourceinfo";
 import { LoadMesh } from "./mesh_loader";
@@ -22,6 +22,7 @@ import {
 } from "./glsl/lasco_shaders";
 import { JP2Info } from "./helioviewer";
 import { SunConfig } from "./config";
+import { HelioviewerJp2Metadata } from "./HelioviewerJp2Metadata";
 
 /**
  * Creates a flat plane that represents the backside of the sun.
@@ -108,6 +109,15 @@ function _ComputeOffsets(jp2info: JP2Info) {
     y: jp2info.solar_center_y / jp2info.height
   }
   return offset;
+}
+
+async function CreateSphericalModel(texture: Texture, jp2Meta: HelioviewerJp2Metadata): Promise<Group> {
+  let geometry = await LoadMesh(SunConfig.model_path);
+  const material = new MeshBasicMaterial({ map: texture });
+  const sphere = new Mesh(geometry, material);
+  const group = new Group();
+  group.add(sphere);
+  return group;
 }
 
 /**
@@ -291,4 +301,5 @@ export {
   UpdateModelTexture,
   UpdateModelOpacity,
   FreeModel,
+  CreateSphericalModel
 };

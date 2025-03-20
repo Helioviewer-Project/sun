@@ -151,7 +151,6 @@ void main() {
 	vec2 scaled_uv = v_uv;
 	scaled_uv -= vec2(0.5);
 	scaled_uv /= scale;
-	// scaled_uv /= scale;
 	// Apply aspect ratio to image
 	if (aspect_ratio > 1.0) {
 		scaled_uv.x = scaled_uv.x / (aspect_ratio);
@@ -159,6 +158,7 @@ void main() {
 		scaled_uv.y = scaled_uv.y * aspect_ratio;
 	}
 
+	// Apply helioviewer shift.
 	scaled_uv.x += x_offset;
 	scaled_uv.y += y_offset;
 
