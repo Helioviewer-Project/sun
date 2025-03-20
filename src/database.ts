@@ -1,4 +1,5 @@
 import { Helioviewer, JP2Info } from "./helioviewer.js";
+import { HelioviewerJp2Metadata } from "./HelioviewerJp2Metadata.js";
 import { QualitySettings, Resolution2Scale } from "./quality.js";
 
 interface SunTextureData {
@@ -10,6 +11,8 @@ interface SunTextureData {
   url: string;
   /** Image metadata required for texture positioning */
   jp2info: JP2Info;
+  /** jp2 header metadata */
+  jp2Metadata: HelioviewerJp2Metadata;
 }
 
 interface UrlInfo {
@@ -78,6 +81,32 @@ class ImageFinder {
     // Return url list
     return url_info;
   }
+
+  /**
+   * Queries helioviewer for a single image
+   *
+   * @param source Helioviewer source ID
+   * @param start Time to query for the image
+   * @param quality Quality settings for the image
+   * @returns Promise resolving to a UrlInfo object
+   */
+  static async GetImage(
+    source: number,
+    time: Date,
+    quality: QualitySettings
+  ): Promise<SunTextureData> {
+    const image = await Helioviewer.GetClosestImage(source, time);
+    const scale = Resolution2Scale(quality.resolution, source);
+    let url = await Helioviewer.GetImageURL(image.id, scale, quality.format);
+    const jp2Metadata = await Helioviewer.GetJp2Header(image.id);
+    return {
+      id: image.id,
+      url: url,
+      date: image.timestamp,
+      jp2info: image.jp2_info,
+      jp2Metadata: jp2Metadata
+    }
+  }
 }
 
 /**
@@ -123,6 +152,8 @@ class Database {
           url: image.url,
           jp2info: image.jp2info,
         };
+        // TODO: Add jp2 xml if we continue using it.
+        // @ts-ignore
         results.push(helios_image);
       }
     } catch (e) {
@@ -130,6 +161,22 @@ class Database {
     }
 
     return results;
+  }
+
+  /**
+   * Query data sources for a single image
+   *
+   * @param {number} source Helioviewer source ID
+   * @param {Date} start Date to query for the image
+   * @param {QualitySettings} quality Quality settings for the image
+   * @return {Promise<SunTextureData>} Promise resolving to a single SunTextureData object
+   */
+  static async GetImage(
+    source: number,
+    start: Date,
+    quality: QualitySettings
+  ) {
+    return ImageFinder.GetImage(source, start, quality);
   }
 }
 

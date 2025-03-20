@@ -1,3 +1,5 @@
+import { HelioviewerJp2Metadata } from "./HelioviewerJp2Metadata";
+
 interface JP2Info {
   /** Original jp2 image width */
   width: number;
@@ -85,7 +87,7 @@ class Helioviewer {
     while (query_time <= end) {
       // Query Helioviewer for the closest image to the given time.
       // Sends the request off and store the promise
-      let image_promise = Helioviewer._GetClosestImage(
+      let image_promise = Helioviewer.GetClosestImage(
         source,
         new Date(query_time),
       );
@@ -112,7 +114,7 @@ class Helioviewer {
    * @returns {ImageInfo}
    * @private
    */
-  static async _GetClosestImage(
+  static async GetClosestImage(
     source: number,
     time: Date,
   ): Promise<ImageInfo> {
@@ -141,6 +143,17 @@ class Helioviewer {
         solar_radius: image.rsun,
       },
     };
+  }
+
+  /**
+   * Get the JP2 image header
+   * @param id JP2 Image ID
+   * @returns {HelioviewerJp2Metadata} parsed XML object
+   */
+  static async GetJp2Header(id: number): Promise<HelioviewerJp2Metadata> {
+    const url = Helioviewer.GetApiUrl() + "getJP2Header/?id=" + id;
+    let result = await fetch(url);
+    return new HelioviewerJp2Metadata(await result.text());
   }
 
   /**
