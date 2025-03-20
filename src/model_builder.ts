@@ -8,7 +8,6 @@ import {
   Material,
   Object3D,
   AdditiveBlending,
-  MeshBasicMaterial,
 } from "three";
 import { PLANE_SOURCES } from "./sourceinfo";
 import { LoadMesh } from "./mesh_loader";
@@ -16,6 +15,10 @@ import {
   vertex_shader as SolarVertexShader,
   fragment_shader as SolarFragmentShader,
 } from "./glsl/solar_shaders";
+import {
+  vertex_shader as SolarVertexShaderImproved,
+  fragment_shader as SolarFragmentShaderImproved,
+} from "./glsl/solar_shader_improved";
 import {
   vertex_shader as LascoVertexShader,
   fragment_shader as LascoFragmentShader,
@@ -113,8 +116,15 @@ function _ComputeOffsets(jp2info: JP2Info) {
 
 async function CreateSphericalModel(texture: Texture, jp2Meta: HelioviewerJp2Metadata): Promise<Group> {
   let geometry = await LoadMesh(SunConfig.model_path);
-  const material = new MeshBasicMaterial({ map: texture });
-  const sphere = new Mesh(geometry, material);
+  let shader = new ShaderMaterial({
+    uniforms: {
+      tex: { value: texture },
+      opacity: { value: 1.0 }
+    },
+    vertexShader: SolarVertexShaderImproved,
+    fragmentShader: SolarFragmentShaderImproved,
+  });
+  const sphere = new Mesh(geometry, shader);
   const group = new Group();
   group.add(sphere);
   return group;
