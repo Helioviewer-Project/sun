@@ -163,11 +163,11 @@ void main() {
 	scaled_uv.y += y_offset;
 
 	// Apply rotation to the image
-	// float rotation_rad = radians(rotate_degrees);
-	// vec2 center = vec2(0.5);
-	// vec2 centered_uv = scaled_uv - center;
-	// mat2 rotation_matrix = mat2(cos(rotation_rad), -sin(rotation_rad), sin(rotation_rad), cos(rotation_rad));
-	// scaled_uv = rotation_matrix * centered_uv + center;
+	float rotation_rad = radians(rotate_degrees);
+	vec2 center = vec2(0.5);
+	vec2 centered_uv = scaled_uv - center;
+	mat2 rotation_matrix = mat2(cos(rotation_rad), -sin(rotation_rad), sin(rotation_rad), cos(rotation_rad));
+	scaled_uv = rotation_matrix * centered_uv + center;
 
     if (scaled_uv.x > 1.0 || scaled_uv.y > 1.0 || scaled_uv.x < 0.0 || scaled_uv.y < 0.0) {
         discard;
@@ -201,7 +201,7 @@ void main() {
 
     // Update the output color to what we've calculated above.
 	gl_FragColor = color;
-	// gl_FragColor.rgb += vec3(0.1);
+	gl_FragColor.rgb += vec3(0.1);
 
     // Uncomment this line below to visualize the UVs
     // gl_FragColor = vec4(v_uv.x, v_uv.y, 0, 1);
