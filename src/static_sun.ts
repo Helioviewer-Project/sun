@@ -25,6 +25,7 @@ class StaticSun extends Object3D {
         super();
         this.ready = new Promise(async (resolve, reject) => {
           this.imageData = await Database.GetImage(source, date, quality);
+          console.log(`Loading sun ${source} with timestamp ${this.imageData.date.toISOString()}`);
           this.texture = (await CreateTextures([this.imageData]))[0];
           this.model = await CreateSphericalModel(this.texture.texture, this.imageData.jp2Metadata)
           this.add(this.model);

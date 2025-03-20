@@ -124,6 +124,7 @@ async function CreateSphericalModel(texture: Texture, jp2Meta: HelioviewerJp2Met
     vertexShader: SolarVertexShaderImproved,
     fragmentShader: SolarFragmentShaderImproved,
   });
+  shader.blending = AdditiveBlending;
   const sphere = new Mesh(geometry, shader);
   const group = new Group();
   group.add(sphere);

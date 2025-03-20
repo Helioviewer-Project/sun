@@ -21,16 +21,31 @@ const cameraControls = new CameraControls(camera, renderer.domElement);
 cameraControls.setLookAt(0, 0, 3, 0, 0, 0);
 cameraControls.zoomTo(2)
 
-const aia304 = new StaticSun(13, new Date("2024-07-02 00:00:00Z"));
-const aia304Scene = new THREE.Scene();
-aia304Scene.add(aia304);
+function MakeSun(id, date) {
+  const sun = new StaticSun(id, date);
+  const scene = new THREE.Scene();
+  scene.add(sun);
+  return scene;
+}
+
+const date = new Date("2024-07-02 12:00:00Z");
+const aia304Scene = MakeSun(10, date);
+const irisScene = MakeSun(88, date);
+const solo171Scene = MakeSun(84, date);
 
 const clock = new THREE.Clock();
 function animate() {
     const delta = clock.getDelta();
     cameraControls.update(delta);
 
+    renderer.autoClear = true;
     renderer.render(aia304Scene, camera);
+
+    renderer.autoClear = false;
+    renderer.clearDepth();
+    renderer.render(irisScene, camera);
+    renderer.clearDepth();
+    renderer.render(solo171Scene, camera);
 
     requestAnimationFrame(animate);
 }
