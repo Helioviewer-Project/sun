@@ -114,12 +114,17 @@ function _ComputeOffsets(jp2info: JP2Info) {
   return offset;
 }
 
-async function CreateSphericalModel(texture: Texture, jp2Meta: HelioviewerJp2Metadata): Promise<Group> {
+async function CreateSphericalModel(texture: Texture, jp2Meta: HelioviewerJp2Metadata, jp2info: JP2Info): Promise<Group> {
   let geometry = await LoadMesh(SunConfig.model_path);
   let shader = new ShaderMaterial({
     uniforms: {
       tex: { value: texture },
-      opacity: { value: 1.0 }
+      opacity: { value: 1.0 },
+      aspect: { value: jp2Meta.width() / jp2Meta.height() },
+      scale: { value: jp2Meta.scale() },
+      x_offset: { value: jp2Meta.glOffsetX() },
+      y_offset: { value: jp2Meta.glOffsetY() },
+      rotate_degrees: { value: 0 }
     },
     vertexShader: SolarVertexShaderImproved,
     fragmentShader: SolarFragmentShaderImproved,

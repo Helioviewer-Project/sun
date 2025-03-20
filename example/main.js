@@ -28,10 +28,19 @@ function MakeSun(id, date) {
   return scene;
 }
 
-const date = new Date("2024-07-02 12:00:00Z");
-const aia304Scene = MakeSun(10, date);
-const irisScene = MakeSun(88, date);
+const date = new Date("2024-03-18 14:41:00Z");
+// const aia304Scene = MakeSun(10, date);
+// const irisScene = MakeSun(88, date);
 const solo171Scene = MakeSun(84, date);
+
+
+// Point for reference. Center of sun.
+const sphereScene = new THREE.Scene();
+const sphereGeometry = new THREE.SphereGeometry(0.0125, 32, 32);
+const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+sphere.position.z = 1;
+sphereScene.add(sphere);
 
 const clock = new THREE.Clock();
 function animate() {
@@ -39,13 +48,15 @@ function animate() {
     cameraControls.update(delta);
 
     renderer.autoClear = true;
-    renderer.render(aia304Scene, camera);
+    // renderer.render(aia304Scene, camera);
 
-    renderer.autoClear = false;
-    renderer.clearDepth();
-    renderer.render(irisScene, camera);
-    renderer.clearDepth();
+    // renderer.autoClear = false;
+    // renderer.clearDepth();
+    // renderer.render(irisScene, camera);
+    // renderer.clearDepth();
     renderer.render(solo171Scene, camera);
+    renderer.autoClear = false;
+    renderer.render(sphereScene, camera);
 
     requestAnimationFrame(animate);
 }

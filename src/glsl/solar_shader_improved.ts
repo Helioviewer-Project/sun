@@ -15,9 +15,7 @@ let vertex_shader = `
 #include <skinning_pars_vertex>
 #include <logdepthbuf_pars_vertex>
 #include <clipping_planes_pars_vertex>
-varying vec2 texCoord;
 varying vec2 v_uv;
-// texCoord is used to pass the vertex information on to the fragment shader
 void main() {
 	#include <uv_vertex>
 	#include <color_vertex>
@@ -40,7 +38,6 @@ void main() {
 	#include <worldpos_vertex>
 	#include <envmap_vertex>
 	#include <fog_vertex>
-    texCoord = uv;
 	v_uv = uv;
 }`;
 
@@ -61,10 +58,21 @@ let fragment_shader = `
 // tex is the 3D texture, in this case the image of the sun we are mapping to the model
 uniform sampler2D tex;
 
-// texCoord is the uv we're working on, received from the vertex shader.
+// CRVAL computed for use in the shader from the image metadata
+uniform vec2 CRVAL;
+
+// Rotation quaternion generated from CROTA in image metadata
+uniform vec4 CROTA;
+
+uniform float aspect;
+uniform float scale;
+uniform float x_offset;
+uniform float y_offset;
+uniform float rotate_degrees;
+
+// texcoord is the uv we're working on, received from the vertex shader.
 // varying means it is a variable coming from the vertex shader.
 // as opposed to uniform, which means it is a global constant.
-varying vec2 texCoord;
 varying vec2 v_uv;
 
 uniform vec3 diffuse;
@@ -117,7 +125,34 @@ void main() {
 	#include <premultiplied_alpha_fragment>
 	#include <dithering_fragment>
 
-    vec4 color = vec4(texture2D(tex, v_uv).rgb, opacity);
+	// This scales the image to the appropriate size so that emission is off the main hemisphere.
+	vec2 final_uv = v_uv;
+	final_uv -= vec2(0.5);
+	final_uv /= scale;
+	// Apply aspect ratio to image
+	if (aspect > 1.0) {
+		final_uv.x = final_uv.x / (aspect);
+	} else {
+		final_uv.y = final_uv.y * aspect;
+	}
+
+	// Apply helioviewer shift.
+	final_uv.x += x_offset;
+	final_uv.y += y_offset;
+
+	// Apply rotation to the image
+	float rotation_rad = radians(rotate_degrees);
+	vec2 center = vec2(0.5);
+	vec2 centered_uv = final_uv - center;
+	mat2 rotation_matrix = mat2(cos(rotation_rad), -sin(rotation_rad), sin(rotation_rad), cos(rotation_rad));
+	final_uv = rotation_matrix * centered_uv + center;
+
+	if (final_uv.x < 0.0 || final_uv. y < 0.0 || final_uv.x > 1.0 || final_uv.y > 1.0) {
+		discard;
+	}
+
+    vec4 color = vec4(texture2D(tex, final_uv).rgb, opacity);
+	color.rgb += vec3(0.1);
 
     // Update the output color to what we've calculated above.
 	gl_FragColor = color;
