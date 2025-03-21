@@ -40,6 +40,8 @@ const date = new Date("2024-01-18 12:31:00Z");
 const sdo_pos = new THREE.Vector3(43284503.92959727, -12411499.056033596, 140550730.57956055);
 const aia171Scene = MakeSun(10, date, sdo_pos, "slider1");
 
+const irisScene = MakeSun(88, date, sdo_pos, "slider3");
+
 const solo_pos = new THREE.Vector3(-11871559.40806384, 3937832.915950194, 140189566.56253082)
 const solo171Scene = MakeSun(84, date, solo_pos, "slider2");
 
@@ -62,6 +64,8 @@ function animate() {
     renderer.autoClear = false;
     renderer.clearDepth();
     renderer.render(aia171Scene, camera);
+    renderer.clearDepth();
+    renderer.render(irisScene, camera);
     renderer.clearDepth();
     renderer.render(sphereScene, camera);
 
