@@ -3,6 +3,21 @@
 Currently the demo is showing an alignment problem
 with solar orbiter and AIA 171.
 
+## How to run
+
+```bash
+# Clone the demonstration branch
+git clone --branch demo https://github.com/Helioviewer-Project/sun sun_demo
+# Enter the project directory
+cd sun_demo
+# Compile the module
+npm i && npx tsc
+# Optionally, run npx tsc -w in a separate terminal so that changes are
+# compiled automatically
+cd example
+npm i && npx vite
+```
+
 Challenge here is to figure out what's wrong with the
 calculations to position the image onto the
 3D model.
