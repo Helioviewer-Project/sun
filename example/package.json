@@ -12,5 +12,8 @@
     "@helioviewer/sun": "file:..",
     "camera-controls": "^2.10.0",
     "three": "^0.174.0"
+  },
+  "devDependencies": {
+    "vite": "^6.2.2"
   }
 }
