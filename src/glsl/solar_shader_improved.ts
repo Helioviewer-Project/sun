@@ -152,7 +152,6 @@ void main() {
 	}
 
     vec4 color = vec4(texture2D(tex, final_uv).rgb, opacity);
-	color.rgb += vec3(0.1);
 
     // Update the output color to what we've calculated above.
 	gl_FragColor = color;

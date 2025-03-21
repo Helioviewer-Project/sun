@@ -1,4 +1,3 @@
-import { Quaternion, Vector3 } from "three";
 const SUN_RADIUS = 0.25;
 const RadiusKMeter = 695700; // photospheric, IAU2015 Table 4, https://doi.org/10.1007/s10569-017-9805-5
 const RadiusMeter = RadiusKMeter * 1e3;
@@ -22,7 +21,6 @@ class HelioviewerJp2Metadata {
      */
     radiusInArcsec() {
         const val = this.toDegrees(Math.atan2(1, this.distanceToSun())) * 3600;
-        console.log("Radius in arcsec: ", val);
         return val;
     }
 
@@ -76,37 +74,29 @@ class HelioviewerJp2Metadata {
         const arcsecPerPixel = this.getNumberOrDie("CDELT1");
         const rsun_px = this.radiusInArcsec()  / arcsecPerPixel;
         const shortEdge = Math.min(this.width(), this.height());
-        const val = shortEdge / (4 * rsun_px);
-        console.log("Computed scale: ", val);
-        console.log(this.radiusInArcsec() * this.unitPerArcsec())
-        return val;
-    }
-
-    /**
-     * Compute the openGL unit offset given the helioviewer offset
-     * @param hv_offset
-     */
-    offset(hv_offset: number) {
-        const shortEdge = Math.min(this.width(), this.height());
-        return (hv_offset - 0.5) / shortEdge;
+        return shortEdge / (4 * rsun_px);
     }
 
     /**
      * Compute the openGL offset along the Y axis
      */
     glOffsetY() {
-        const shortEdge = Math.min(this.width(), this.height());
         const ref = this.getNumberOrDie("CRPIX2");
-        return (ref) / shortEdge - (this.getNumberOrDie("CRVAL2") * this.unitPerArcsec());
+        const crval = this.getNumberOrDie("CRVAL2");
+        const cdelt = this.getNumberOrDie("CDELT2");
+        const px = crval / cdelt / this.height();
+        return (ref) / this.height() - px;
     }
 
     /**
      * Compute the openGL offset along the X axis
      */
     glOffsetX() {
-        const shortEdge = Math.min(this.width(), this.height());
         const ref = this.getNumberOrDie("CRPIX1");
-        return (ref) / shortEdge - (this.getNumberOrDie("CRVAL1") * this.unitPerArcsec());
+        const crval = this.getNumberOrDie("CRVAL1");
+        const cdelt = this.getNumberOrDie("CDELT1");
+        const px = crval / cdelt / this.width();
+        return ref / this.width() - px;
     }
 
     /**

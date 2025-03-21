@@ -2,7 +2,7 @@ import { Group, Object3D } from "three";
 import { Quality, QualitySettings } from "./quality";
 import { Database, SunTextureData } from "./database";
 import { CreateTextures, SunTexture } from "./texture";
-import { CreateSphericalModel } from "./model_builder";
+import { CreateSphericalModel, UpdateModelOpacity } from "./model_builder";
 
 /**
  * The static sun is a sun that represents 1 image instead
@@ -29,8 +29,18 @@ class StaticSun extends Object3D {
           this.texture = (await CreateTextures([this.imageData]))[0];
           this.model = await CreateSphericalModel(this.texture.texture, this.imageData.jp2Metadata, this.imageData.jp2info);
           this.add(this.model);
+          resolve();
         });
     }
+
+    /**
+     * Sets the model opacity to the given value
+     * @param value Number between 0 and 1, 0 is transparent and 1 is opaque.
+     */
+    set opacity(value: number) {
+        this.ready.then(() => { UpdateModelOpacity(this.model, value); })
+    }
+
 }
 
 export { StaticSun }
