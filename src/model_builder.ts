@@ -124,6 +124,7 @@ async function CreateSphericalModel(texture: Texture, jp2Meta: HelioviewerJp2Met
       scale: { value: jp2Meta.scale() },
       x_offset: { value: jp2Meta.glOffsetX() },
       y_offset: { value: jp2Meta.glOffsetY() },
+      center_of_rotation: { value: jp2Meta.centerOfRotation() },
       rotate_degrees: { value: jp2info.solar_rotation }
     },
     vertexShader: SolarVertexShaderImproved,

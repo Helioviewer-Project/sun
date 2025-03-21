@@ -15,21 +15,17 @@ class HelioviewerJp2Metadata {
         this.xml = parser.parseFromString(header, "text/xml");
     }
 
+    getSolarRadiusFactor(): number {
+        return 1;
+    }
+
     /**
      * returns the radius of the sun in arcseconds calculated according to the
      * observatory's distance from the sun.
      */
     radiusInArcsec() {
-        const val = this.toDegrees(Math.atan2(1, this.distanceToSun())) * 3600;
+        const val = this.toDegrees(Math.atan2(this.getSolarRadiusFactor(), this.distanceToSun())) * 3600;
         return val;
-    }
-
-    /**
-     * @returns OpenGL units per arcsecond
-     */
-    unitPerArcsec() {
-        const radiusSunInArcsec = this.radiusInArcsec();
-        return SUN_RADIUS / radiusSunInArcsec;
     }
 
     /**
@@ -81,7 +77,7 @@ class HelioviewerJp2Metadata {
      * Compute the openGL offset along the Y axis
      */
     glOffsetY() {
-        const ref = this.getNumberOrDie("CRPIX2");
+        const ref = this.getNumberOrDie("CRPIX2") - 0.5;
         const crval = this.getNumberOrDie("CRVAL2");
         const cdelt = this.getNumberOrDie("CDELT2");
         const px = crval / cdelt / this.height();
@@ -92,11 +88,17 @@ class HelioviewerJp2Metadata {
      * Compute the openGL offset along the X axis
      */
     glOffsetX() {
-        const ref = this.getNumberOrDie("CRPIX1");
+        const ref = this.getNumberOrDie("CRPIX1") - 0.5;
         const crval = this.getNumberOrDie("CRVAL1");
         const cdelt = this.getNumberOrDie("CDELT1");
         const px = crval / cdelt / this.width();
         return ref / this.width() - px;
+    }
+
+    centerOfRotation() {
+        const xcen = this.getNumberOrDie("CRPIX1") - 0.5;
+        const ycen = this.getNumberOrDie("CRPIX2") - 0.5;
+        return [xcen / this.width(), ycen / this.height()];
     }
 
     /**

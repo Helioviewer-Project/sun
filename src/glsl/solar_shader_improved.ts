@@ -69,6 +69,7 @@ uniform float scale;
 uniform float x_offset;
 uniform float y_offset;
 uniform float rotate_degrees;
+uniform vec2 center_of_rotation;
 
 // texcoord is the uv we're working on, received from the vertex shader.
 // varying means it is a variable coming from the vertex shader.
@@ -131,7 +132,7 @@ void main() {
 	final_uv /= scale;
 	// Apply aspect ratio to image
 	if (aspect > 1.0) {
-		final_uv.x = final_uv.x / (aspect);
+		final_uv.x = final_uv.x / aspect;
 	} else {
 		final_uv.y = final_uv.y * aspect;
 	}
@@ -142,7 +143,7 @@ void main() {
 
 	// Apply rotation to the image
 	float rotation_rad = radians(rotate_degrees);
-	vec2 center = vec2(0.5);
+	vec2 center = center_of_rotation;
 	vec2 centered_uv = final_uv - center;
 	mat2 rotation_matrix = mat2(cos(rotation_rad), -sin(rotation_rad), sin(rotation_rad), cos(rotation_rad));
 	final_uv = rotation_matrix * centered_uv + center;
