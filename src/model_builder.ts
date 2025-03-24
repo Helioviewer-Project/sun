@@ -35,63 +35,41 @@ import { HelioviewerJp2Metadata } from "./HelioviewerJp2Metadata";
  * @returns {Mesh}
  * @private
  */
-async function _GetBackside(uniforms: SolarShaderUniforms) {
-    return new Group();
-}
-
-interface Offsets {
-  x: number;
-  y: number;
-};
-
-async function CreateEmission(texture: Texture, jp2info: JP2Info, offsets: Offsets) {
-  let scale = _ComputeMeshScale(jp2info);
-  // Load the backside of the mesh in parallel
-  // Load the model
+async function _GetBackside(uniforms: SolarShaderUniforms): Promise<Mesh> {
+  const uniformCopy: SolarShaderUniforms = JSON.parse(JSON.stringify(uniforms));
+  uniformCopy.backside.value = true;
   let geometry = await LoadMesh(SunConfig.model_path);
-  const aspect = jp2info.width / jp2info.height;
-
-  // Create the shader, this is where the uniforms that appear
-  // in the shader are set.
   let shader = new ShaderMaterial({
-    uniforms: {
-      tex: { value: texture },
-      scale: { value: scale },
-      x_offset: { value: offsets.x },
-      y_offset: { value: offsets.y },
-      aspect_ratio: { value: aspect },
-      backside: { value: false },
-      emission: { value: true },
-      opacity: { value: 1 },
-      rotate_degrees: { value: jp2info.solar_rotation },
-      transparent_threshold: { value: 0.05 },
-    },
-    vertexShader: SolarVertexShader,
-    fragmentShader: SolarFragmentShader,
+    // @ts-ignore
+    uniforms: uniformCopy,
+    vertexShader: SolarVertexShaderImproved,
+    fragmentShader: SolarFragmentShaderImproved,
   });
-  // Enable transparency, without this, making pixels transparent will
-  // just make them white.
+  shader.depthWrite = false;
   shader.transparent = true;
+  shader.side = BackSide;
   shader.blending = AdditiveBlending;
-  // Construct the 3js mesh
   return new Mesh(geometry, shader);
 }
 
-async function CreateSphericalModel(texture: Texture, jp2Meta: HelioviewerJp2Metadata, jp2info: JP2Info): Promise<Group> {
+async function CreateSphericalModelMesh(uniforms: SolarShaderUniforms): Promise<Mesh> {
   let geometry = await LoadMesh(SunConfig.model_path);
-  const uniforms: SolarShaderUniforms = CopySphericalModelUniforms(texture, jp2Meta, jp2info);
-  uniforms.opacity = { value: 1.0 };
   let shader = new ShaderMaterial({
     // @ts-ignore
     uniforms: uniforms,
     vertexShader: SolarVertexShaderImproved,
     fragmentShader: SolarFragmentShaderImproved,
   });
+  shader.transparent = true;
   shader.blending = AdditiveBlending;
-  const sphere = new Mesh(geometry, shader);
+  return new Mesh(geometry, shader);
+}
+
+async function CreateSphericalModel(texture: Texture, jp2Meta: HelioviewerJp2Metadata, jp2info: JP2Info): Promise<Group> {
   const group = new Group();
-  const backside = _GetBackside(uniforms);
-  group.add(sphere);
+  const uniforms = CopySphericalModelUniforms(texture, jp2Meta, jp2info);
+  group.add(await _GetBackside(uniforms));
+  group.add(await CreateSphericalModelMesh(uniforms));
   return group;
 }
 
@@ -179,7 +157,10 @@ function UpdateModelTexture(
 function CopySphericalModelUniforms(tex: Texture, jp2Meta: HelioviewerJp2Metadata, jp2info: JP2Info, uniforms: SolarShaderUniforms | undefined = undefined): SolarShaderUniforms {
   if (typeof uniforms === "undefined") {
     // @ts-ignore
-    uniforms = { opacity: { value: 1.0 }};
+    uniforms = {
+      opacity: { value: 1.0 },
+      backside: { value: false }
+    };
   }
   // @ts-ignore
   uniforms.tex = { value: tex },

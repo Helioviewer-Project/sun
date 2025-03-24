@@ -65,6 +65,7 @@ uniform float x_offset;
 uniform float y_offset;
 uniform float rotate_degrees;
 uniform vec2 center_of_rotation;
+uniform bool backside;
 
 // texcoord is the uv we're working on, received from the vertex shader.
 // varying means it is a variable coming from the vertex shader.
@@ -142,12 +143,23 @@ void main() {
 	vec2 centered_uv = final_uv - center;
 	mat2 rotation_matrix = mat2(cos(rotation_rad), -sin(rotation_rad), sin(rotation_rad), cos(rotation_rad));
 	final_uv = rotation_matrix * centered_uv + center;
+    vec4 color = vec4(texture2D(tex, final_uv).rgb, opacity);
 
 	if (final_uv.x < 0.0 || final_uv. y < 0.0 || final_uv.x > 1.0 || final_uv.y > 1.0) {
 		discard;
 	}
 
-    vec4 color = vec4(texture2D(tex, final_uv).rgb, opacity);
+    // Using the equation of a circle here with an origin at (0.5, 0.5) i.e. center of the mesh
+    // and a radius of 0.25 (quarter of the mesh, see resources/models/dimensions.png). Any
+    // value less than the radius is inside the circle, and therefore inside the hemisphere.
+    bool is_inside_hemisphere = (pow(0.5 - v_uv.x, 2.0) + pow(0.5 - v_uv.y, 2.0)) < 0.0625;
+
+    // For the backside render, hide the hemisphere of the sun, but leave everything else the same.
+    // This will give the JHelioviewer effect of off-disk emissions.
+    if (backside && is_inside_hemisphere) {
+        // transparent
+		discard;
+    }
 
     // Update the output color to what we've calculated above.
 	gl_FragColor = color;
@@ -158,14 +170,24 @@ interface Uniform<T> {
 };
 
 interface SolarShaderUniforms {
+	/** Texture to display */
 	tex: Uniform<Texture>;
+	/** Aspect ratio of the texture (width/height) */
 	aspect: Uniform<number>;
+	/** Scaling factor to use */
 	scale: Uniform<number>;
+	/** X offset for the image for positioning the reference pixel */
 	x_offset: Uniform<number>;
+	/** Y offset for the image for positioning the reference pixel */
 	y_offset: Uniform<number>;
+	/** Amount to rotate the image */
 	rotate_degrees: Uniform<number>;
+	/** Point to use as the center of rotation */
 	center_of_rotation: Uniform<number[]>;
+	/** Opacity of the image */
 	opacity: Uniform<number>;
+	/** Whether the shader is rendering the front or back of the sun. The backside only shows emission. */
+	backside: Uniform<boolean>;
 }
 
 export { vertex_shader, fragment_shader };
