@@ -1,0 +1,33 @@
+# Timelapse Demo
+
+This is a demo of making an interactive timelapse of the sun using data from
+the Helioviewer API.
+
+## How to run
+
+```bash
+# Clone the demonstration branch
+git clone https://github.com/Helioviewer-Project/sun
+# Enter the project directory
+cd sun
+# Compile the module
+npm i && npx tsc
+# Optionally, run npx tsc -w in a separate terminal so that changes are
+# compiled automatically
+cd example/timelapse
+npm i && npx vite
+```
+
+Relevant code to follow is:
+- `src/model_builder.ts:CreateSphericalModel` - This is the function used
+   for rendering the model in the example. It passes values to the shader
+   program.
+- `src/glsl/solar_shader_improved.ts` - This is the shader program being used for drawing
+  the model.
+- `src/HelioviewerJp2Metadata.ts` - This reads the XML JP2 Header to compute
+  values to pass to the shader program. See `CreateSphericalModel` for
+  how the functions are passed to the shader.
+- `src/model_builder.ts:UpdateModelTexture` - This updates the image displayed
+  when the time changes
+- `src/sun.ts:SetTime` - This selects the image that should be displayed based
+  on the given time.

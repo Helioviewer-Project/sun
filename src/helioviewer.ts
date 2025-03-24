@@ -126,7 +126,6 @@ class Helioviewer {
       time.toISOString();
     let result = await fetch(api_url);
     let image = await result.json();
-    console.log(image);
     // Add the Z to indicate the date is a UTC date. Helioviewer works in UTC
     // but doesn't use the formal specification for it.
     return {

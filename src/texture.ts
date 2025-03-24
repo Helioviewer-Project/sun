@@ -11,9 +11,11 @@ interface SunTexture {
   texture: Texture;
   /** Image metadata */
   jp2info: JP2Info;
+  jp2Metadata: HelioviewerJp2Metadata;
 }
 
 import { TextureLoader } from "three";
+import { HelioviewerJp2Metadata } from "./HelioviewerJp2Metadata";
 
 /**
  * Keep one texture loader initialized.
@@ -61,6 +63,7 @@ async function CreateTextures(
       date: image.date,
       texture: texture as any,
       jp2info: image.jp2info,
+      jp2Metadata: image.jp2Metadata
     });
   }
 

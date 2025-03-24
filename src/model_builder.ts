@@ -116,17 +116,12 @@ function _ComputeOffsets(jp2info: JP2Info) {
 
 async function CreateSphericalModel(texture: Texture, jp2Meta: HelioviewerJp2Metadata, jp2info: JP2Info): Promise<Group> {
   let geometry = await LoadMesh(SunConfig.model_path);
+  const uniforms = {};
+  CopySphericalModelUniforms(uniforms, texture, jp2Meta, jp2info);
+  /** @ts-ignore */
+  uniforms.opacity = { value: 1.0 };
   let shader = new ShaderMaterial({
-    uniforms: {
-      tex: { value: texture },
-      opacity: { value: 1.0 },
-      aspect: { value: jp2Meta.width() / jp2Meta.height() },
-      scale: { value: jp2Meta.scale() },
-      x_offset: { value: jp2Meta.glOffsetX() },
-      y_offset: { value: jp2Meta.glOffsetY() },
-      center_of_rotation: { value: jp2Meta.centerOfRotation() },
-      rotate_degrees: { value: jp2info.solar_rotation }
-    },
+    uniforms: uniforms,
     vertexShader: SolarVertexShaderImproved,
     fragmentShader: SolarFragmentShaderImproved,
   });
@@ -234,6 +229,7 @@ function UpdateModelTexture(
   group: Group,
   texture: Texture,
   jp2info: JP2Info,
+  jp2Meta: HelioviewerJp2Metadata,
   source: number,
 ) {
   // Iterate through the group and update the texture uniform.
@@ -250,10 +246,30 @@ function UpdateModelTexture(
         model.geometry.height = dimensions.height;
         model.updateMatrix();
       } else {
-        model.material.uniforms.scale.value = _ComputeMeshScale(jp2info);
+        CopySphericalModelUniforms(model.material.uniforms, texture, jp2Meta, jp2info);
       }
     }
   }
+}
+
+/**
+ * Copies values into the given uniforms target.
+ *
+ * setting model.material.uniforms = {new object} does not work. Something
+ * due to object references, so this function copies everything over.
+ * @param uniforms Target uniforms object
+ * @param tex New texture
+ * @param jp2Meta New jp2 metadata
+ * @param jp2info New jp2 information
+ */
+function CopySphericalModelUniforms(uniforms: any, tex: Texture, jp2Meta: HelioviewerJp2Metadata, jp2info: JP2Info) {
+  uniforms.tex = { value: tex },
+  uniforms.aspect = { value: jp2Meta.width() / jp2Meta.height() },
+  uniforms.scale = { value: jp2Meta.scale() },
+  uniforms.x_offset = { value: jp2Meta.glOffsetX() },
+  uniforms.y_offset = { value: jp2Meta.glOffsetY() },
+  uniforms.center_of_rotation = { value: jp2Meta.centerOfRotation() },
+  uniforms.rotate_degrees = { value: jp2info.solar_rotation }
 }
 
 /**

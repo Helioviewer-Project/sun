@@ -5,10 +5,10 @@ import * as THREE from "three";
 import { CreateTextures, SunTexture } from "./texture";
 import {
   CreatePlaneWithTexture,
-  CreateHemisphereWithTexture,
   UpdateModelTexture,
   UpdateModelOpacity,
   FreeModel,
+  CreateSphericalModel,
 } from "./model_builder";
 import { PLANE_SOURCES } from "./sourceinfo";
 
@@ -83,8 +83,9 @@ class Sun extends Object3D {
         this._data[0].jp2info,
       );
     } else {
-      this._model = await CreateHemisphereWithTexture(
+      this._model = await CreateSphericalModel(
         this._data[0].texture,
+        this._data[0].jp2Metadata,
         this._data[0].jp2info,
       );
     }
@@ -144,7 +145,7 @@ class Sun extends Object3D {
 
     // Update the texture on the model to the date's texture
     if (this._model) {
-      UpdateModelTexture(this._model, texture, data.jp2info, this.source);
+      UpdateModelTexture(this._model, texture, data.jp2info, data.jp2Metadata, this.source);
     }
   }
 
