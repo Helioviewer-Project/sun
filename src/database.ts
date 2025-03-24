@@ -24,6 +24,8 @@ interface UrlInfo {
   timestamp: Date;
   /** Image metadata */
   jp2info: JP2Info;
+  /** Image header */
+  jp2Header: Promise<HelioviewerJp2Metadata>
 }
 
 /**
@@ -62,7 +64,7 @@ class ImageFinder {
     let images = await Helioviewer.QueryImages(source, start, end, cadence);
     // Iterate over image IDs and query GetImageURL to create
     // a list of URLs.
-    let url_info = [];
+    let url_info: UrlInfo[] = [];
     let scale = Resolution2Scale(quality.resolution, source);
     for (const image of images) {
       let url = Helioviewer.GetImageURL(image.id, scale, quality.format);
@@ -74,6 +76,7 @@ class ImageFinder {
           url: url,
           timestamp: image.timestamp,
           jp2info: image.jp2_info,
+          jp2Header: Helioviewer.GetJp2Header(image.id)
         });
       }
     }
@@ -146,14 +149,13 @@ class Database {
 
       // For each image, get their observer's position in space
       for (const image of images) {
-        let helios_image = {
+        let helios_image: SunTextureData = {
           id: image.id,
           date: image.timestamp,
           url: image.url,
           jp2info: image.jp2info,
+          jp2Metadata: await image.jp2Header
         };
-        // TODO: Add jp2 xml if we continue using it.
-        // @ts-ignore
         results.push(helios_image);
       }
     } catch (e) {
