@@ -8,13 +8,11 @@ import {
   Material,
   Object3D,
   AdditiveBlending,
+  FrontSide,
 } from "three";
 import { PLANE_SOURCES } from "./sourceinfo";
 import { LoadMesh } from "./mesh_loader";
-import {
-  vertex_shader as SolarVertexShader,
-  fragment_shader as SolarFragmentShader,
-} from "./glsl/solar_shaders";
+
 import {
   vertex_shader as SolarVertexShaderImproved,
   fragment_shader as SolarFragmentShaderImproved,
@@ -35,17 +33,17 @@ import { HelioviewerJp2Metadata } from "./HelioviewerJp2Metadata";
  * @returns {Mesh}
  * @private
  */
-async function _GetBackside(uniforms: SolarShaderUniforms): Promise<Mesh> {
-  const uniformCopy: SolarShaderUniforms = JSON.parse(JSON.stringify(uniforms));
-  uniformCopy.backside.value = true;
+async function _GetBackside(mainUniforms: SolarShaderUniforms): Promise<Mesh> {
+  mainUniforms.backside.value = true;
+  mainUniforms.opacity.value = 1.0;
   let geometry = await LoadMesh(SunConfig.model_path);
   let shader = new ShaderMaterial({
     // @ts-ignore
-    uniforms: uniformCopy,
+    uniforms: mainUniforms,
     vertexShader: SolarVertexShaderImproved,
     fragmentShader: SolarFragmentShaderImproved,
   });
-  shader.depthWrite = false;
+  shader.depthTest = false;
   shader.transparent = true;
   shader.side = BackSide;
   shader.blending = AdditiveBlending;
@@ -61,15 +59,15 @@ async function CreateSphericalModelMesh(uniforms: SolarShaderUniforms): Promise<
     fragmentShader: SolarFragmentShaderImproved,
   });
   shader.transparent = true;
+  shader.side = FrontSide;
   shader.blending = AdditiveBlending;
   return new Mesh(geometry, shader);
 }
 
 async function CreateSphericalModel(texture: Texture, jp2Meta: HelioviewerJp2Metadata, jp2info: JP2Info): Promise<Group> {
   const group = new Group();
-  const uniforms = CopySphericalModelUniforms(texture, jp2Meta, jp2info);
-  group.add(await _GetBackside(uniforms));
-  group.add(await CreateSphericalModelMesh(uniforms));
+  group.add(await _GetBackside(GenerateSphericalModelUniforms(texture, jp2Meta, jp2info)));
+  group.add(await CreateSphericalModelMesh(GenerateSphericalModelUniforms(texture, jp2Meta, jp2info)));
   return group;
 }
 
@@ -138,7 +136,7 @@ function UpdateModelTexture(
         model.geometry.height = dimensions.height;
         model.updateMatrix();
       } else {
-        CopySphericalModelUniforms(texture, jp2Meta, jp2info, model.material.uniforms);
+        CopyUniforms(model.material.uniforms, GenerateSphericalModelUniforms(texture, jp2Meta, jp2info, model.material.uniforms.opacity.value, model.material.uniforms.backside.value));
       }
     }
   }
@@ -147,37 +145,34 @@ function UpdateModelTexture(
 /**
  * Copies values into the given uniforms target.
  *
- * setting model.material.uniforms = {new object} does not work. Something
- * due to object references, so this function copies everything over.
  * @param uniforms Target uniforms object
  * @param tex New texture
  * @param jp2Meta New jp2 metadata
  * @param jp2info New jp2 information
  */
-function CopySphericalModelUniforms(tex: Texture, jp2Meta: HelioviewerJp2Metadata, jp2info: JP2Info, uniforms: SolarShaderUniforms | undefined = undefined): SolarShaderUniforms {
-  if (typeof uniforms === "undefined") {
+function GenerateSphericalModelUniforms(tex: Texture, jp2Meta: HelioviewerJp2Metadata, jp2info: JP2Info, opacity: number = 1.0, backside: boolean = false): SolarShaderUniforms {
+  return {
+    opacity: { value: opacity },
+    backside: { value: backside },
+    tex: {value: tex},
+    aspect: { value: jp2Meta.width() / jp2Meta.height() },
+    scale: { value: jp2Meta.scale() },
+    x_offset: { value: jp2Meta.glOffsetX() },
+    y_offset: { value: jp2Meta.glOffsetY() },
+    center_of_rotation: { value: jp2Meta.centerOfRotation() },
+    rotate_degrees: { value: jp2info.solar_rotation }
+  };
+}
+
+/**
+ * setting model.material.uniforms = {new object} does not work. Something
+ * due to object references, so this function copies everything over.
+ */
+function CopyUniforms(dst: SolarShaderUniforms, src: SolarShaderUniforms) {
+  Object.keys(src).forEach((key) => {
     // @ts-ignore
-    uniforms = {
-      opacity: { value: 1.0 },
-      backside: { value: false }
-    };
-  }
-  // @ts-ignore
-  uniforms.tex = { value: tex },
-  // @ts-ignore
-  uniforms.aspect = { value: jp2Meta.width() / jp2Meta.height() },
-  // @ts-ignore
-  uniforms.scale = { value: jp2Meta.scale() },
-  // @ts-ignore
-  uniforms.x_offset = { value: jp2Meta.glOffsetX() },
-  // @ts-ignore
-  uniforms.y_offset = { value: jp2Meta.glOffsetY() },
-  // @ts-ignore
-  uniforms.center_of_rotation = { value: jp2Meta.centerOfRotation() },
-  // @ts-ignore
-  uniforms.rotate_degrees = { value: jp2info.solar_rotation }
-  // @ts-ignore
-  return uniforms;
+    dst[key] = { value: src[key].value };
+  })
 }
 
 /**
