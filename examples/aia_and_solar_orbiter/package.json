@@ -9,7 +9,7 @@
   "license": "MIT",
   "description": "",
   "dependencies": {
-    "@helioviewer/sun": "file:..",
+    "@helioviewer/sun": "file:../..",
     "camera-controls": "^2.10.0",
     "three": "^0.174.0"
   },

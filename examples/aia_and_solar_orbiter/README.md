@@ -1,7 +1,7 @@
-# Demo of 3D sun
+# AIA + Solar Orbiter Demo
 
-Currently the demo is showing an alignment problem
-with solar orbiter and AIA 171.
+This is a demo of the sun module which uses images and data from the Helioviewer
+API for rendering 3D images of the sun.
 
 ## How to run
 
@@ -14,13 +14,9 @@ cd sun_demo
 npm i && npx tsc
 # Optionally, run npx tsc -w in a separate terminal so that changes are
 # compiled automatically
-cd example
+cd example/aia_and_solar_orbiter
 npm i && npx vite
 ```
-
-Challenge here is to figure out what's wrong with the
-calculations to position the image onto the
-3D model.
 
 Relevant code to follow is:
 - `src/model_builder.ts:CreateSphericalModel` - This is the function used
