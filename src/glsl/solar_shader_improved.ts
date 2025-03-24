@@ -1,3 +1,5 @@
+import { Texture } from "three";
+
 /**
  * A vertex shader in the graphics pipeline determines
  * where each vertex should be placed in 3D space. It is executed for each vertex in a 3D model (mesh).
@@ -57,13 +59,6 @@ let fragment_shader = `
 
 // tex is the 3D texture, in this case the image of the sun we are mapping to the model
 uniform sampler2D tex;
-
-// CRVAL computed for use in the shader from the image metadata
-uniform vec2 CRVAL;
-
-// Rotation quaternion generated from CROTA in image metadata
-uniform vec4 CROTA;
-
 uniform float aspect;
 uniform float scale;
 uniform float x_offset;
@@ -158,4 +153,20 @@ void main() {
 	gl_FragColor = color;
 }`;
 
+interface Uniform<T> {
+	value: T
+};
+
+interface SolarShaderUniforms {
+	tex: Uniform<Texture>;
+	aspect: Uniform<number>;
+	scale: Uniform<number>;
+	x_offset: Uniform<number>;
+	y_offset: Uniform<number>;
+	rotate_degrees: Uniform<number>;
+	center_of_rotation: Uniform<number[]>;
+	opacity: Uniform<number>;
+}
+
 export { vertex_shader, fragment_shader };
+export type { SolarShaderUniforms, Uniform }
