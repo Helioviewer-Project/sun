@@ -16,6 +16,7 @@ class StaticSun extends Object3D {
     private texture: SunTexture;
     // @ts-ignore
     private model: Group;
+    private _time: Date;
     public ready: Promise<void>;
     /**
      * @param source Helioviewer observatory ID
@@ -23,10 +24,12 @@ class StaticSun extends Object3D {
      */
     constructor(source: number, date: Date, quality: QualitySettings = Quality.Maximum) {
         super();
+        this._time = date;
         this.ready = new Promise(async (resolve, reject) => {
           this.imageData = await Database.GetImage(source, date, quality);
           console.log(`Loading sun ${source} with timestamp ${this.imageData.date.toISOString()}`);
           this.texture = (await CreateTextures([this.imageData]))[0];
+          this._time = this.texture.date;
           this.model = await CreateSphericalModel(this.texture.texture, this.imageData.jp2Metadata, this.imageData.jp2info);
           this.add(this.model);
           resolve();
@@ -41,6 +44,9 @@ class StaticSun extends Object3D {
         this.ready.then(() => { UpdateModelOpacity(this.model, value); })
     }
 
+    get time() {
+        return this._time;
+    }
 }
 
 export { StaticSun }
