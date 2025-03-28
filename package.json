@@ -1,6 +1,6 @@
 {
   "name": "@helioviewer/sun",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Model sun based on current observations from helioviewer.org for threejs.",
   "main": "dist/index.js",
   "scripts": {
