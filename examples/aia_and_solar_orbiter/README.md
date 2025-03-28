@@ -7,9 +7,9 @@ API for rendering 3D images of the sun.
 
 ```bash
 # Clone the demonstration branch
-git clone --branch demo https://github.com/Helioviewer-Project/sun sun_demo
+git clone https://github.com/Helioviewer-Project/sun
 # Enter the project directory
-cd sun_demo
+cd sun
 # Compile the module
 npm i && npx tsc
 # Optionally, run npx tsc -w in a separate terminal so that changes are
