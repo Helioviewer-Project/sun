@@ -2,4 +2,5 @@ import { Sun } from "./sun";
 import { StaticSun } from "./static_sun";
 import { Quality, QualitySettings } from "./quality";
 import { SunConfig } from "./config";
-export { Sun, StaticSun, Quality, QualitySettings, SunConfig };
+import { PLANE_SOURCES } from "./sourceinfo";
+export { Sun, StaticSun, Quality, QualitySettings, SunConfig, PLANE_SOURCES };
