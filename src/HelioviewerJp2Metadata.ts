@@ -1,6 +1,4 @@
-const SUN_RADIUS = 0.25;
-const RadiusKMeter = 695700; // photospheric, IAU2015 Table 4, https://doi.org/10.1007/s10569-017-9805-5
-const RadiusMeter = RadiusKMeter * 1e3;
+import { MathUtils, RadiusMeter } from "./math/MathUtils";
 
 /**
  * Used for parsing XML jp2 information from Helioviewer
@@ -15,8 +13,25 @@ class HelioviewerJp2Metadata {
         this.xml = parser.parseFromString(header, "text/xml");
     }
 
+
+
     getSolarRadiusFactor(): number {
         return 1;
+    }
+
+    /**
+     * Retrieves the radius of the sun in pixels according to the jp2 metadata.
+     */
+    radiusInPixels() {
+        return this.getNumberOrDie("SOLAR_R");
+    }
+
+    date(): Date {
+        const dateStr = this.get("DATE_OBS", "");
+        if (dateStr === "") {
+            throw "Missing DATE_OBS";
+        }
+        return new Date(`${dateStr}Z`);
     }
 
     /**
@@ -24,15 +39,34 @@ class HelioviewerJp2Metadata {
      * observatory's distance from the sun.
      */
     radiusInArcsec() {
-        const val = this.toDegrees(Math.atan2(this.getSolarRadiusFactor(), this.distanceToSun())) * 3600;
-        return val;
+        try {
+            // Attempt to compute the radius using the distance to the sun.
+            // This may fail if some variation of DSUN is not available in the
+            // JP2 Header
+            const out = this.toDegrees(Math.atan2(this.getSolarRadiusFactor(), this.distanceToSun())) * 3600;
+            return out;
+        } catch (e) {
+            try {
+                // If DSUN is not available, distanceToSun will fail, in that case
+                // try to calculate it using the radius in pixels.
+                return this.getNumberOrDie("CDELT1") * this.radiusInPixels()
+            } catch (e) {
+                // If there no SOLAR_R/RSUN value then radiusInPixels will fail.
+                // For this case just assume rsun at 1 AU
+                const earthDistance = MathUtils.getEarthDistance(this.date().getTime());
+                const out = this.toDegrees(Math.atan2(this.getSolarRadiusFactor(), earthDistance)) * 3600;
+                return out;
+            }
+        }
     }
 
     /**
      * Returns the distance to the sun in solar radii units.
      */
     distanceToSun(): number {
-        return this.getNumberOrDie("DSUN_OBS") / RadiusMeter;
+        let dsun = this.getNumber("DSUN_OBS", 0);
+        if (dsun === 0) dsun = this.getNumberOrDie("DSUN");
+        return  dsun / RadiusMeter;
     }
 
     toDegrees(angle: number) {
@@ -107,13 +141,14 @@ class HelioviewerJp2Metadata {
      * @param tag
      * @param defaultValue
      */
-    private get(tag: string, defaultValue: any) {
+    private get(tag: string, defaultValue: any): string {
         const tags = this.xml.getElementsByTagName(tag);
         if (tags.length === 0) {
             console.warn(`Couldn't find ${tag}, using default value ${defaultValue}`);
             return defaultValue;
         }
-        return tags[0].textContent;
+        console.assert(tags[0].textContent != null);
+        return tags[0].textContent as string;
     }
 
     /**
