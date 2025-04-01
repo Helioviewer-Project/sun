@@ -19,7 +19,6 @@ import {
   SolarShaderUniforms,
 } from "./glsl/solar_shader_improved";
 import {
-  vertex_shader as LascoVertexShader,
   fragment_shader as LascoFragmentShader,
 } from "./glsl/lasco_shaders";
 import { JP2Info } from "./helioviewer";
@@ -74,7 +73,7 @@ async function CreateSphericalModel(texture: Texture, jp2Meta: HelioviewerJp2Met
 /**
  * Gets the dimensions of a flat plane according to the jp2info
  * @param {JP2Info} jp2info
- * @returns {Object} Object with width, height fields.
+ * @returns {any} Object with width, height fields.
  */
 function _getPlaneDimensionsFromJp2Info(jp2info: JP2Info) {
   let x_scale = jp2info.width / jp2info.solar_radius;
@@ -87,22 +86,24 @@ function _getPlaneDimensionsFromJp2Info(jp2info: JP2Info) {
   };
 }
 
-async function CreatePlaneWithTexture(texture: Texture, jp2info: JP2Info) {
+async function CreatePlaneWithTexture(texture: Texture, jp2Meta: HelioviewerJp2Metadata, jp2info: JP2Info): Promise<Group> {
   let dimensions = _getPlaneDimensionsFromJp2Info(jp2info);
   const geometry = new PlaneGeometry(dimensions.width, dimensions.height);
   let shader = new ShaderMaterial({
     uniforms: {
       tex: { value: texture },
-      x_offset: { value: 0.0 },
+      x_offset: { value: jp2Meta.glOffsetX() },
       y_offset: { value: 0.0 },
       opacity: { value: 1 },
     },
-    vertexShader: LascoVertexShader,
+    vertexShader: SolarVertexShaderImproved,
     fragmentShader: LascoFragmentShader,
   });
   shader.transparent = true;
   shader.blending = AdditiveBlending;
   const mesh = new Mesh(geometry, shader);
+  mesh.position.setX(jp2Meta.sceneOffsetX());
+  mesh.position.setY(jp2Meta.sceneOffsetY());
   // API expects all meshes to be groups, so add this mesh to a single group
   const group = new Group();
   group.add(mesh);

@@ -101,7 +101,7 @@ class ImageFinder {
     const image = await Helioviewer.GetClosestImage(source, time);
     const scale = Resolution2Scale(quality.resolution, source);
     let url = await Helioviewer.GetImageURL(image.id, scale, quality.format);
-    const jp2Metadata = await Helioviewer.GetJp2Header(image.id);
+    const jp2Metadata = await Helioviewer.GetJp2Header(image.id, image.timestamp);
     return {
       id: image.id,
       url: url,

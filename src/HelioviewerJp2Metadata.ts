@@ -5,15 +5,17 @@ import { MathUtils, RadiusMeter } from "./math/MathUtils";
  */
 class HelioviewerJp2Metadata {
     private xml: XMLDocument;
+    /** Optional date override to use instead of attempting to parse from metadata */
+    private _date: Date | undefined;
     /**
      * @param header JP2Image header
+     * @param date If set, use this date instead of reading from metadata
      */
-    constructor(header: string) {
+    constructor(header: string, date?: Date) {
         const parser = new DOMParser();
         this.xml = parser.parseFromString(header, "text/xml");
+        this._date = date;
     }
-
-
 
     getSolarRadiusFactor(): number {
         return 1;
@@ -27,6 +29,14 @@ class HelioviewerJp2Metadata {
     }
 
     date(): Date {
+        // Use date override if it is set.
+        // This was simpler than trying to handle different FITS
+        // keys to correctly get the date since helioviewer already does this.
+        // It may be implemented in the future.
+        if (typeof this._date !== undefined) {
+            return this._date as Date;
+        }
+
         const dateStr = this.get("DATE_OBS", "");
         if (dateStr === "") {
             throw "Missing DATE_OBS";
@@ -49,7 +59,8 @@ class HelioviewerJp2Metadata {
             try {
                 // If DSUN is not available, distanceToSun will fail, in that case
                 // try to calculate it using the radius in pixels.
-                return this.getNumberOrDie("CDELT1") * this.radiusInPixels()
+                const out = this.getNumberOrDie("CDELT1") * this.radiusInPixels()
+                return out;
             } catch (e) {
                 // If there no SOLAR_R/RSUN value then radiusInPixels will fail.
                 // For this case just assume rsun at 1 AU
@@ -105,6 +116,72 @@ class HelioviewerJp2Metadata {
         const rsun_px = this.radiusInArcsec()  / arcsecPerPixel;
         const shortEdge = Math.min(this.width(), this.height());
         return shortEdge / (4 * rsun_px);
+    }
+
+    /**
+     * Convert arcseconds to solar radius units
+     * @param arcsec Unit in arcseconds
+     * @returns The distance in solar radii
+     */
+    arcsec2Solrad(arcsec: number): number {
+        return arcsec / this.radiusInArcsec();
+    }
+
+    /**
+     * Convert pixel coordinates to arcseconds
+     * @param pixel The pixel coordinate to convert
+     * @param refPix The reference pixel (CRPIX)
+     * @param refVal The reference value (CRVAL)
+     * @param delta The pixel scale (CDELT)
+     * @returns The coordinate in arcseconds
+     */
+    pixel2arcsec(pixel: number, refPix: number, refVal: number, delta: number) {
+        return (pixel - refPix) * delta + refVal;
+    }
+
+    /**
+     * Convert pixel coordinates to solar radius units
+     * @param pixel The pixel coordinate to convert
+     * @param refPix The reference pixel (CRPIX)
+     * @param refVal The reference value (CRVAL)
+     * @param delta The pixel scale (CDELT)
+     * @returns The coordinate in solar radii
+     */
+    pixel2solrad(pixel: number, refPix: number, refVal: number, delta: number): number {
+        const arcsec = this.pixel2arcsec(pixel, refPix, refVal, delta);
+        return this.arcsec2Solrad(arcsec);
+    }
+
+    /**
+     * Computes the amount to move the entire model to account for WCS information.
+     * This is different than only moving the image to align with a model.
+     */
+    sceneOffsetX(): number {
+        const ref = this.getNumberOrDie("CRPIX1") - 0.5;
+        const crval = this.getNumberOrDie("CRVAL1");
+        const cdelt = this.getNumberOrDie("CDELT1");
+        // Get the current position of the reference pixel in scene units
+        // This is done by assuming the center of the image (this.width()) is
+        // by default at the center of the scene (reference value 0).
+        const currentPos = this.pixel2solrad(ref, this.width() / 2, 0, cdelt);
+        // Get the target position of the reference pixel in scene units
+        // This is where it ought to be, computed using normal info from header.
+        const targetPos = this.pixel2solrad(ref, ref, crval, cdelt);
+        return targetPos - currentPos;
+    }
+
+    sceneOffsetY(): number {
+        const ref = this.getNumberOrDie("CRPIX2") - 0.5;
+        const crval = this.getNumberOrDie("CRVAL2");
+        const cdelt = this.getNumberOrDie("CDELT2");
+        // Get the current position of the reference pixel in scene units
+        // This is done by assuming the center of the image (this.width()) is
+        // by default at the center of the scene (reference value 0).
+        const currentPos = this.pixel2solrad(ref, this.width() / 2, 0, cdelt);
+        // Get the target position of the reference pixel in scene units
+        // This is where it ought to be, computed using normal info from header.
+        const targetPos = this.pixel2solrad(ref, ref, crval, cdelt);
+        return targetPos - currentPos;
     }
 
     /**

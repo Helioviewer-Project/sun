@@ -32,7 +32,7 @@ class StaticSun extends Object3D {
           this._time = this.texture.date;
           this.model = PLANE_SOURCES.indexOf(source) === -1 ?
             await CreateSphericalModel(this.texture.texture, this.imageData.jp2Metadata, this.imageData.jp2info) :
-            await CreatePlaneWithTexture(this.texture.texture, this.imageData.jp2info);
+            await CreatePlaneWithTexture(this.texture.texture, this.imageData.jp2Metadata, this.imageData.jp2info);
           this.add(this.model);
           resolve();
         });

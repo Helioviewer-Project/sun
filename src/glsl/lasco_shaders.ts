@@ -125,27 +125,29 @@ void main() {
 	#include <fog_fragment>
 	#include <premultiplied_alpha_fragment>
 	#include <dithering_fragment>
+	gl_FragColor = vec4(texture2D(tex, v_uv).rgb, opacity);
 
-    if (v_uv.x > 1.0 || v_uv.y > 1.0 || v_uv.x < 0.0 || v_uv.y < 0.0) {
-        discard;
-    }
-
-    // Get the color of this coordinate in the texture
-    vec4 color = vec4(texture2D(tex, v_uv).rgb, opacity);
-
-    // Black is vec3(0, 0, 0) all values are from 0 to 1.
-    // x, y, z -> red, green, blue
-    // If all three color values are below this threshold, then make them transparent.
-    // then change the color to transparent. If any color is above the threshold, then don't change it
-    // use the color sampled from the texture.
-    float transparent_threshold = 0.01f;
-    bool should_be_transparent = color.x < transparent_threshold && color.y < transparent_threshold && color.z < transparent_threshold;
-    if (should_be_transparent) {
-        discard;
-    }
-
-    // Update the output color to what we've calculated above.
-	gl_FragColor = color;
+// 	vec2 tex_coord = vec2(v_uv.x + x_offset, v_uv.y + y_offset);
+//     if (tex_coord.x > 1.0 || tex_coord.y > 1.0 || tex_coord.x < 0.0 || tex_coord.y < 0.0) {
+//         discard;
+//     }
+//
+//     // Get the color of this coordinate in the texture
+//     vec4 color = vec4(texture2D(tex, tex_coord).rgb, opacity);
+//
+//     // Black is vec3(0, 0, 0) all values are from 0 to 1.
+//     // x, y, z -> red, green, blue
+//     // If all three color values are below this threshold, then make them transparent.
+//     // then change the color to transparent. If any color is above the threshold, then don't change it
+//     // use the color sampled from the texture.
+//     float transparent_threshold = 0.01f;
+//     bool should_be_transparent = color.x < transparent_threshold && color.y < transparent_threshold && color.z < transparent_threshold;
+//     if (should_be_transparent) {
+//         discard;
+//     }
+//
+//     // Update the output color to what we've calculated above.
+// 	gl_FragColor = color;
 }`;
 
 export { vertex_shader, fragment_shader };

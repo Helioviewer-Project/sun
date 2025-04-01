@@ -1,6 +1,8 @@
 import { HelioviewerJp2Metadata } from "./HelioviewerJp2Metadata";
 
 interface JP2Info {
+  /** Time the image was observed */
+  timestamp: Date;
   /** Original jp2 image width */
   width: number;
   /** Original jp2 image height */
@@ -58,13 +60,23 @@ function parseDate(datestr: string): Date {
 }
 
 class Helioviewer {
+  static api: string = "https://api.helioviewer.org?action=";
+
+  /**
+   *
+   * @param url
+   */
+  static SetApiUrl(url: string): void {
+    Helioviewer.api = url;
+  }
+
   /**
    * Gets the API URL used for making requests
    *
    * @returns {string} URL
    */
   static GetApiUrl(): string {
-    return "https://api.helioviewer.org/v2/";
+    return Helioviewer.api;
   }
   /**
    * Returns a list of Image IDs for the specified time range
@@ -120,7 +132,7 @@ class Helioviewer {
   ): Promise<ImageInfo> {
     let api_url =
       Helioviewer.GetApiUrl() +
-      "getClosestImage/?sourceId=" +
+      "getClosestImage&sourceId=" +
       source +
       "&date=" +
       time.toISOString();
@@ -128,10 +140,12 @@ class Helioviewer {
     let image = await result.json();
     // Add the Z to indicate the date is a UTC date. Helioviewer works in UTC
     // but doesn't use the formal specification for it.
+    const date = parseDate(image.date);
     return {
       id: image.id,
-      timestamp: parseDate(image.date),
+      timestamp: date,
       jp2_info: {
+        timestamp: date,
         width: image.width,
         height: image.height,
         solar_center_x: image.refPixelX,
@@ -149,10 +163,10 @@ class Helioviewer {
    * @param id JP2 Image ID
    * @returns {HelioviewerJp2Metadata} parsed XML object
    */
-  static async GetJp2Header(id: number): Promise<HelioviewerJp2Metadata> {
-    const url = Helioviewer.GetApiUrl() + "getJP2Header/?id=" + id;
+  static async GetJp2Header(id: number, timestamp?: Date): Promise<HelioviewerJp2Metadata> {
+    const url = Helioviewer.GetApiUrl() + "getJP2Header&id=" + id;
     let result = await fetch(url);
-    return new HelioviewerJp2Metadata(await result.text());
+    return new HelioviewerJp2Metadata(await result.text(), timestamp);
   }
 
   /**
@@ -166,7 +180,7 @@ class Helioviewer {
   static GetImageURL(id: number, scale: number, format = "jpg"): string {
     let url =
       Helioviewer.GetApiUrl() +
-      "downloadImage/?id=" +
+      "downloadImage&id=" +
       id +
       "&scale=" +
       scale +
@@ -176,4 +190,8 @@ class Helioviewer {
   }
 }
 
-export { Helioviewer, JP2Info };
+function SetHelioviewerApiUrl(url: string) {
+  Helioviewer.SetApiUrl(url);
+}
+
+export { Helioviewer, JP2Info, SetHelioviewerApiUrl };

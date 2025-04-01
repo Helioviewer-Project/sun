@@ -80,6 +80,7 @@ class Sun extends Object3D {
     if (PLANE_SOURCES.indexOf(this.source) != -1) {
       this._model = await CreatePlaneWithTexture(
         this._data[0].texture,
+        this._data[0].jp2Metadata,
         this._data[0].jp2info,
       );
     } else {
