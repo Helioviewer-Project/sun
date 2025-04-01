@@ -2,7 +2,7 @@ import { Group, Object3D } from "three";
 import { Quality, QualitySettings } from "./quality";
 import { Database, SunTextureData } from "./database";
 import { CreateTextures, SunTexture } from "./texture";
-import { CreateSphericalModel, UpdateModelOpacity, CreatePlaneWithTexture } from "./model_builder";
+import { CreateSphericalModel, UpdateModelOpacity, CreatePlaneWithTexture, FreeModel } from "./model_builder";
 import { PLANE_SOURCES } from "./sourceinfo";
 
 /**
@@ -48,6 +48,13 @@ class StaticSun extends Object3D {
 
     get time() {
         return this._time;
+    }
+
+    /** Destroys this model and releases the underlying three resources */
+    dispose() {
+      this.ready.then(() => {
+        FreeModel(this.children[0] as Object3D);
+      });
     }
 }
 
