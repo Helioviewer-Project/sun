@@ -18,7 +18,7 @@ const camera = new THREE.OrthographicCamera(
 const renderer = new THREE.WebGLRenderer({canvas: document.getElementById('canvas')});
 renderer.setSize(window.innerWidth, window.innerHeight);
 const cameraControls = new CameraControls(camera, renderer.domElement);
-cameraControls.setLookAt(0, 0, 3, 0, 0, 0);
+cameraControls.setLookAt(0, 0, 100, 0, 0, 0);
 cameraControls.zoomTo(2)
 
 function MakeSun(id, date, sliderId) {
