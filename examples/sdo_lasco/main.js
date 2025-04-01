@@ -1,9 +1,7 @@
-import { SetHelioviewerApiUrl, StaticSun } from "@helioviewer/sun"
+import { StaticSun } from "@helioviewer/sun"
 import CameraControls from "camera-controls";
 import * as THREE from "three";
 CameraControls.install({ THREE });
-
-SetHelioviewerApiUrl("http://localhost:8081?action=")
 
 /** Scene setup. Skip to line 39 for the interesting things. */
 const aspectRatio = window.innerWidth / window.innerHeight;
