@@ -53,7 +53,9 @@ class StaticSun extends Object3D {
     /** Destroys this model and releases the underlying three resources */
     dispose() {
       this.ready.then(() => {
-        FreeModel(this.children[0] as Object3D);
+        this.children.forEach((child) => {
+          FreeModel(child as Object3D);
+        })
       });
     }
 }
