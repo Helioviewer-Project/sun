@@ -158,7 +158,8 @@ class HelioviewerJp2Metadata {
      */
     sceneOffsetX(): number {
         const ref = this.getNumberOrDie("CRPIX1") - 0.5;
-        const crval = this.getNumberOrDie("CRVAL1");
+        // JHelioviewer defaults to 0 if CRVAL is not present. Do the same here.
+        const crval = this.getNumber("CRVAL1", 0);
         const cdelt = this.getNumberOrDie("CDELT1");
         // Get the current position of the reference pixel in scene units
         // This is done by assuming the center of the image (this.width()) is
@@ -172,7 +173,8 @@ class HelioviewerJp2Metadata {
 
     sceneOffsetY(): number {
         const ref = this.getNumberOrDie("CRPIX2") - 0.5;
-        const crval = this.getNumberOrDie("CRVAL2");
+        // JHelioviewer defaults to 0 if CRVAL is not present. Do the same here.
+        const crval = this.getNumber("CRVAL2", 0);
         const cdelt = this.getNumberOrDie("CDELT2");
         // Get the current position of the reference pixel in scene units
         // This is done by assuming the center of the image (this.width()) is
@@ -189,7 +191,8 @@ class HelioviewerJp2Metadata {
      */
     glOffsetY() {
         const ref = this.getNumberOrDie("CRPIX2") - 0.5;
-        const crval = this.getNumberOrDie("CRVAL2");
+        // JHelioviewer defaults to 0 if CRVAL is not present. Do the same here.
+        const crval = this.getNumber("CRVAL2", 0);
         const cdelt = this.getNumberOrDie("CDELT2");
         const px = crval / cdelt / this.height();
         return (ref) / this.height() - px;
@@ -200,7 +203,8 @@ class HelioviewerJp2Metadata {
      */
     glOffsetX() {
         const ref = this.getNumberOrDie("CRPIX1") - 0.5;
-        const crval = this.getNumberOrDie("CRVAL1");
+        // JHelioviewer defaults to 0 if CRVAL is not present. Do the same here.
+        const crval = this.getNumber("CRVAL1", 0);
         const cdelt = this.getNumberOrDie("CDELT1");
         const px = crval / cdelt / this.width();
         return ref / this.width() - px;
