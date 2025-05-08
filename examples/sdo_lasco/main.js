@@ -68,7 +68,7 @@ function animate() {
   // Clear the scene so we can start drawing the next frame.
   renderer.clear();
   // Draw both the sphere and the first coronagraph.
-  // Using the occluder here hides a portion of the coronagraph
+  // Using a black ball (occluder) here hides a portion of the coronagraph
   // when the sphere overlaps it. Try commenting out the other
   // renders and only render these 2 objects to see what
   // the effect is.

@@ -59,7 +59,7 @@ class HelioviewerJp2Metadata {
             try {
                 // If DSUN is not available, distanceToSun will fail, in that case
                 // try to calculate it using the radius in pixels.
-                const out = this.getNumberOrDie("CDELT1") * this.radiusInPixels()
+                const out = this.imageScaleX * this.radiusInPixels()
                 return out;
             } catch (e) {
                 // If there no SOLAR_R/RSUN value then radiusInPixels will fail.
@@ -112,7 +112,7 @@ class HelioviewerJp2Metadata {
      */
     scale(): number {
         // Assume cdelt1 and cdelt2 are the same.
-        const arcsecPerPixel = this.getNumberOrDie("CDELT1");
+        const arcsecPerPixel = this.imageScaleX;
         const rsun_px = this.radiusInArcsec()  / arcsecPerPixel;
         const shortEdge = Math.min(this.width(), this.height());
         return shortEdge / (4 * rsun_px);
@@ -153,6 +153,29 @@ class HelioviewerJp2Metadata {
     }
 
     /**
+     * Returns the arcseconds / pixel scale of the image.
+     * @param cdeltKey options: [CDELT1, CDELT2]
+     * @param cunitKey options: [CUNIT1, CUNIT2]
+     * @returns {number}
+     */
+    private getPixelDelta(cdeltKey: string, cunitKey: string): number {
+        const unit = this.get(cunitKey, "arcsec").trim();
+        const delta = this.getNumberOrDie(cdeltKey);
+        if (unit === "deg") {
+            return delta * 3600;
+        }
+        return delta;
+    }
+
+    private get imageScaleX(): number {
+        return this.getPixelDelta("CDELT1", "CUNIT1");
+    }
+
+    private get imageScaleY(): number {
+        return this.getPixelDelta("CDELT2", "CUNIT2");
+    }
+
+    /**
      * Computes the amount to move the entire model to account for WCS information.
      * This is different than only moving the image to align with a model.
      */
@@ -160,7 +183,7 @@ class HelioviewerJp2Metadata {
         const ref = this.getNumberOrDie("CRPIX1") - 0.5;
         // JHelioviewer defaults to 0 if CRVAL is not present. Do the same here.
         const crval = this.getNumber("CRVAL1", 0);
-        const cdelt = this.getNumberOrDie("CDELT1");
+        const cdelt = this.imageScaleX;
         // Get the current position of the reference pixel in scene units
         // This is done by assuming the center of the image (this.width()) is
         // by default at the center of the scene (reference value 0).
@@ -175,7 +198,7 @@ class HelioviewerJp2Metadata {
         const ref = this.getNumberOrDie("CRPIX2") - 0.5;
         // JHelioviewer defaults to 0 if CRVAL is not present. Do the same here.
         const crval = this.getNumber("CRVAL2", 0);
-        const cdelt = this.getNumberOrDie("CDELT2");
+        const cdelt = this.imageScaleY;
         // Get the current position of the reference pixel in scene units
         // This is done by assuming the center of the image (this.width()) is
         // by default at the center of the scene (reference value 0).
@@ -193,7 +216,7 @@ class HelioviewerJp2Metadata {
         const ref = this.getNumberOrDie("CRPIX2") - 0.5;
         // JHelioviewer defaults to 0 if CRVAL is not present. Do the same here.
         const crval = this.getNumber("CRVAL2", 0);
-        const cdelt = this.getNumberOrDie("CDELT2");
+        const cdelt = this.imageScaleY;
         const px = crval / cdelt / this.height();
         return (ref) / this.height() - px;
     }
@@ -205,7 +228,7 @@ class HelioviewerJp2Metadata {
         const ref = this.getNumberOrDie("CRPIX1") - 0.5;
         // JHelioviewer defaults to 0 if CRVAL is not present. Do the same here.
         const crval = this.getNumber("CRVAL1", 0);
-        const cdelt = this.getNumberOrDie("CDELT1");
+        const cdelt = this.imageScaleX;
         const px = crval / cdelt / this.width();
         return ref / this.width() - px;
     }
