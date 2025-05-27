@@ -10,7 +10,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build static files
+      - name: Build sun module
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build static files for github pages
         run: |
           cd examples
           npm ci
