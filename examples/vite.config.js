@@ -1,6 +1,6 @@
 export default {
   build: {
-    base: './',
+    base: '/sun-3d/',
     outDir: 'dist',
     emptyOutDir: true,
     rollupOptions: {
