@@ -1,8 +1,8 @@
 export default {
-  base: '/sun-3d',
+  base: '/sun',
   publicDir: 'resources',
   build: {
-    outDir: 'sun-3d',
+    outDir: 'sun',
     rollupOptions: {
       input: {
         main: 'index.html',

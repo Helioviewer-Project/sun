@@ -1,4 +1,4 @@
-import { StaticSun, SetHelioviewerApiUrl, SunConfig } from "@helioviewer/sun"
+import { StaticSun, SunConfig } from "@helioviewer/sun"
 import CameraControls from "camera-controls";
 import * as THREE from "three";
 CameraControls.install({ THREE });
