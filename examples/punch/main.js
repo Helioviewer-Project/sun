@@ -1,9 +1,9 @@
-import { StaticSun, SetHelioviewerApiUrl } from "@helioviewer/sun"
+import { StaticSun, SunConfig } from "@helioviewer/sun"
 import CameraControls from "camera-controls";
 import * as THREE from "three";
 CameraControls.install({ THREE });
+SunConfig.model_path = `${import.meta.env.BASE_URL}/models/zit.glb`;
 
-SetHelioviewerApiUrl("http://localhost:8081/?action=")
 /** Scene setup */
 const aspectRatio = window.innerWidth / window.innerHeight;
 const frustumSize = 10;

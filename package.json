@@ -4,7 +4,7 @@
   "description": "Model sun based on current observations from helioviewer.org for threejs.",
   "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "npx tsc"
   },
   "bin": {
     "hvsun-install": "bin/install.js"
