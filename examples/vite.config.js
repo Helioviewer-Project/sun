@@ -1,8 +1,8 @@
 export default {
+  base: '/sun-3d',
+  publicDir: 'resources',
   build: {
-    base: '/sun-3d/',
-    outDir: 'dist',
-    emptyOutDir: true,
+    outDir: 'sun-3d',
     rollupOptions: {
       input: {
         main: 'index.html',
@@ -13,5 +13,5 @@ export default {
         punch: 'punch/index.html'
       }
     }
-  }
+  },
 }

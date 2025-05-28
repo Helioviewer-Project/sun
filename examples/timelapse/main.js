@@ -1,7 +1,8 @@
-import { Quality, Sun } from "@helioviewer/sun"
+import { Quality, Sun, SunConfig } from "@helioviewer/sun"
 import CameraControls from "camera-controls";
 import * as THREE from "three";
 CameraControls.install({ THREE });
+SunConfig.model_path = `${import.meta.env.BASE_URL}/models/zit.glb`;
 
 /** Scene setup */
 const aspectRatio = window.innerWidth / window.innerHeight;
