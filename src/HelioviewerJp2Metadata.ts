@@ -189,6 +189,10 @@ class HelioviewerJp2Metadata {
         return value;
     }
 
+    private hasCd(): boolean {
+        return ["CD1_1", "CD1_2", "CD2_1", "CD2_2"].some(key => this.xml.getElementsByTagName(key).length > 0);
+    }
+
     /** Read one PC matrix element, defaulting to the identity matrix. */
     private getPc(row: number, column: number): number {
         const identity = row === column ? 1 : 0;
@@ -207,10 +211,10 @@ class HelioviewerJp2Metadata {
         }
 
         // FITS PC convention: CD_i_j = CDELT_i * PC_i_j.
-        const cd11 = this.imageScaleX * this.getPc(1, 1);
-        const cd12 = this.imageScaleX * this.getPc(1, 2);
-        const cd21 = this.imageScaleY * this.getPc(2, 1);
-        const cd22 = this.imageScaleY * this.getPc(2, 2);
+        const cd11 = this.hasCd() ? this.getAngularValue("CD1_1", "CUNIT1") : this.imageScaleX * this.getPc(1, 1);
+        const cd12 = this.hasCd() ? this.getAngularValue("CD1_2", "CUNIT1") : this.imageScaleX * this.getPc(1, 2);
+        const cd21 = this.hasCd() ? this.getAngularValue("CD2_1", "CUNIT2") : this.imageScaleY * this.getPc(2, 1);
+        const cd22 = this.hasCd() ? this.getAngularValue("CD2_2", "CUNIT2") : this.imageScaleY * this.getPc(2, 2);
 
         // CRPIX is one-based in FITS. Convert it to the zero-based coordinate
         // system used by the image dimensions and Three.js geometry.

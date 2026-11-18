@@ -79,7 +79,11 @@ async function CreateSphericalModel(texture: Texture, jp2Meta: HelioviewerJp2Met
 function _createPlaneGeometry(
   jp2Meta: HelioviewerJp2Metadata,
   projectToSolarSurface: boolean,
+  jp2info: JP2Info,
 ): PlaneGeometry {
+  if (!projectToSolarSurface) {
+    return new PlaneGeometry(jp2info.width / jp2info.solar_radius, jp2info.height / jp2info.solar_radius);
+  }
   // Surface observations need enough vertices to follow the sphere. Ordinary
   // coronagraph planes remain a single flat quad.
   const widthSegments = projectToSolarSurface
@@ -106,6 +110,17 @@ function _createPlaneGeometry(
     0,      0,      1, 0,
     0,      0,      0, 1,
   ));
+
+  // A reflected WCS reverses triangle winding. Keep the visible hemisphere
+  // front-facing while retaining the reflected texture coordinates.
+  if ((wcs.xx * wcs.yy) - (wcs.xy * wcs.yx) < 0) {
+    const indices = geometry.getIndex()!;
+    for (let i = 0; i < indices.count; i += 3) {
+      const second = indices.getX(i + 1);
+      indices.setX(i + 1, indices.getX(i + 2));
+      indices.setX(i + 2, second);
+    }
+  }
 
   if (projectToSolarSurface) {
     const positions = geometry.getAttribute("position");
@@ -134,7 +149,7 @@ function _createPlaneGeometry(
 async function CreatePlaneWithTexture(texture: Texture, jp2Meta: HelioviewerJp2Metadata, jp2info: JP2Info, source: number): Promise<Group> {
   const projectToSolarSurface =
     SURFACE_PLANE_SOURCES.indexOf(source) !== -1;
-  const geometry = _createPlaneGeometry(jp2Meta, projectToSolarSurface);
+  const geometry = _createPlaneGeometry(jp2Meta, projectToSolarSurface, jp2info);
   let shader = new ShaderMaterial({
     uniforms: {
       tex: { value: texture },
@@ -148,9 +163,8 @@ async function CreatePlaneWithTexture(texture: Texture, jp2Meta: HelioviewerJp2M
   shader.transparent = true;
   shader.blending = AdditiveBlending;
   const mesh = new Mesh(geometry, shader);
-  const wcs = jp2Meta.planeWcs();
   if (!projectToSolarSurface) {
-    mesh.position.set(wcs.centerX, wcs.centerY, 0);
+    mesh.position.set(jp2Meta.sceneOffsetX(), jp2Meta.sceneOffsetY(), 0);
   }
   // API expects all meshes to be groups, so add this mesh to a single group
   const group = new Group();
@@ -186,12 +200,12 @@ function UpdateModelTexture(
         model.geometry = _createPlaneGeometry(
           jp2Meta,
           projectToSolarSurface,
+          jp2info,
         );
-        const wcs = jp2Meta.planeWcs();
         if (projectToSolarSurface) {
           model.position.set(0, 0, 0);
         } else {
-          model.position.set(wcs.centerX, wcs.centerY, 0);
+          model.position.set(jp2Meta.sceneOffsetX(), jp2Meta.sceneOffsetY(), 0);
         }
         model.updateMatrix();
       } else {
