@@ -175,6 +175,78 @@ class HelioviewerJp2Metadata {
         return this.getPixelDelta("CDELT2", "CUNIT2");
     }
 
+    /** Convert a FITS angular value to arcseconds. */
+    private getAngularValue(valueKey: string, unitKey: string): number {
+        const value = this.getNumber(valueKey, 0);
+        const unit = this.get(unitKey, "arcsec").trim().toLowerCase();
+
+        if (unit === "deg" || unit === "degree" || unit === "degrees") {
+            return value * 3600;
+        }
+        if (unit === "rad" || unit === "radian" || unit === "radians") {
+            return this.toDegrees(value) * 3600;
+        }
+        return value;
+    }
+
+    private hasCd(): boolean {
+        return ["CD1_1", "CD1_2", "CD2_1", "CD2_2"].some(key => this.xml.getElementsByTagName(key).length > 0);
+    }
+
+    /** Read one PC matrix element, defaulting to the identity matrix. */
+    private getPc(row: number, column: number): number {
+        const identity = row === column ? 1 : 0;
+        return this.getNumber(`PC${row}_${column}`, identity);
+    }
+
+    /**
+     * Return the complete linear helioprojective WCS for a planar image.
+     * Matrix coefficients and the image-center position are expressed in
+     * solar-radius units so they can be applied directly to Three.js geometry.
+     */
+    planeWcs() {
+        const radius = this.radiusInArcsec();
+        if (!Number.isFinite(radius) || radius <= 0) {
+            throw "Invalid solar angular radius";
+        }
+
+        // FITS PC convention: CD_i_j = CDELT_i * PC_i_j.
+        const cd11 = this.hasCd() ? this.getAngularValue("CD1_1", "CUNIT1") : this.imageScaleX * this.getPc(1, 1);
+        const cd12 = this.hasCd() ? this.getAngularValue("CD1_2", "CUNIT1") : this.imageScaleX * this.getPc(1, 2);
+        const cd21 = this.hasCd() ? this.getAngularValue("CD2_1", "CUNIT2") : this.imageScaleY * this.getPc(2, 1);
+        const cd22 = this.hasCd() ? this.getAngularValue("CD2_2", "CUNIT2") : this.imageScaleY * this.getPc(2, 2);
+
+        // CRPIX is one-based in FITS. Convert it to the zero-based coordinate
+        // system used by the image dimensions and Three.js geometry.
+        const referenceX = this.getNumberOrDie("CRPIX1") - 0.5;
+        const referenceY = this.getNumberOrDie("CRPIX2") - 0.5;
+        const deltaX = (this.width() / 2) - referenceX;
+        const deltaY = (this.height() / 2) - referenceY;
+
+        const referenceWorldX = this.getAngularValue("CRVAL1", "CUNIT1");
+        const referenceWorldY = this.getAngularValue("CRVAL2", "CUNIT2");
+
+        return {
+            // Linear pixel-to-scene transform.
+            xx: cd11 / radius,
+            xy: cd12 / radius,
+            yx: cd21 / radius,
+            yy: cd22 / radius,
+
+            // Helioprojective position of the raster center.
+            centerX: (
+                referenceWorldX +
+                (cd11 * deltaX) +
+                (cd12 * deltaY)
+            ) / radius,
+            centerY: (
+                referenceWorldY +
+                (cd21 * deltaX) +
+                (cd22 * deltaY)
+            ) / radius,
+        };
+    }
+
     /**
      * Computes the amount to move the entire model to account for WCS information.
      * This is different than only moving the image to align with a model.

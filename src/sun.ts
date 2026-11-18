@@ -82,6 +82,7 @@ class Sun extends Object3D {
         this._data[0].texture,
         this._data[0].jp2Metadata,
         this._data[0].jp2info,
+        this.source,
       );
     } else {
       this._model = await CreateSphericalModel(

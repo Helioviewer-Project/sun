@@ -9,8 +9,9 @@ import {
   Object3D,
   AdditiveBlending,
   FrontSide,
+  Matrix4,
 } from "three";
-import { PLANE_SOURCES } from "./sourceinfo";
+import { PLANE_SOURCES, SURFACE_PLANE_SOURCES } from "./sourceinfo";
 import { LoadMesh } from "./mesh_loader";
 
 import {
@@ -75,20 +76,80 @@ async function CreateSphericalModel(texture: Texture, jp2Meta: HelioviewerJp2Met
  * @param {JP2Info} jp2info
  * @returns {any} Object with width, height fields.
  */
-function _getPlaneDimensionsFromJp2Info(jp2info: JP2Info) {
-  let x_scale = jp2info.width / jp2info.solar_radius;
-  let y_scale = jp2info.height / jp2info.solar_radius;
-  let width = x_scale;
-  let height = y_scale;
-  return {
-    width: width,
-    height: height,
-  };
+function _createPlaneGeometry(
+  jp2Meta: HelioviewerJp2Metadata,
+  projectToSolarSurface: boolean,
+  jp2info: JP2Info,
+): PlaneGeometry {
+  if (!projectToSolarSurface) {
+    return new PlaneGeometry(jp2info.width / jp2info.solar_radius, jp2info.height / jp2info.solar_radius);
+  }
+  // Surface observations need enough vertices to follow the sphere. Ordinary
+  // coronagraph planes remain a single flat quad.
+  const widthSegments = projectToSolarSurface
+    ? Math.max(16, Math.min(96, Math.ceil(jp2Meta.width() / 4)))
+    : 1;
+  const heightSegments = projectToSolarSurface
+    ? Math.max(16, Math.min(128, Math.ceil(jp2Meta.height() / 4)))
+    : 1;
+
+  const geometry = new PlaneGeometry(
+    jp2Meta.width(),
+    jp2Meta.height(),
+    widthSegments,
+    heightSegments,
+  );
+  const wcs = jp2Meta.planeWcs();
+
+  // PlaneGeometry uses an X/Y coordinate system whose origin is the raster
+  // center. Apply the full FITS CD matrix, including anisotropic scale,
+  // rotation and shear. Three.js Y points upward, matching helioprojective Y.
+  geometry.applyMatrix4(new Matrix4().set(
+    wcs.xx, wcs.xy, 0, 0,
+    wcs.yx, wcs.yy, 0, 0,
+    0,      0,      1, 0,
+    0,      0,      0, 1,
+  ));
+
+  // A reflected WCS reverses triangle winding. Keep the visible hemisphere
+  // front-facing while retaining the reflected texture coordinates.
+  if ((wcs.xx * wcs.yy) - (wcs.xy * wcs.yx) < 0) {
+    const indices = geometry.getIndex()!;
+    for (let i = 0; i < indices.count; i += 3) {
+      const second = indices.getX(i + 1);
+      indices.setX(i + 1, indices.getX(i + 2));
+      indices.setX(i + 2, second);
+    }
+  }
+
+  if (projectToSolarSurface) {
+    const positions = geometry.getAttribute("position");
+
+    for (let index = 0; index < positions.count; index += 1) {
+      // The affine geometry is centered on the raster. Translate every point
+      // to its helioprojective position before projecting it onto the visible
+      // hemisphere x^2 + y^2 + z^2 = 1.
+      const x = positions.getX(index) + wcs.centerX;
+      const y = positions.getY(index) + wcs.centerY;
+      const radiusSquared = (x * x) + (y * y);
+      const z = Math.sqrt(Math.max(0, 1 - radiusSquared)) + 0.001;
+
+      positions.setXYZ(index, x, y, z);
+    }
+
+    positions.needsUpdate = true;
+    geometry.computeVertexNormals();
+    geometry.computeBoundingBox();
+    geometry.computeBoundingSphere();
+  }
+
+  return geometry;
 }
 
-async function CreatePlaneWithTexture(texture: Texture, jp2Meta: HelioviewerJp2Metadata, jp2info: JP2Info): Promise<Group> {
-  let dimensions = _getPlaneDimensionsFromJp2Info(jp2info);
-  const geometry = new PlaneGeometry(dimensions.width, dimensions.height);
+async function CreatePlaneWithTexture(texture: Texture, jp2Meta: HelioviewerJp2Metadata, jp2info: JP2Info, source: number): Promise<Group> {
+  const projectToSolarSurface =
+    SURFACE_PLANE_SOURCES.indexOf(source) !== -1;
+  const geometry = _createPlaneGeometry(jp2Meta, projectToSolarSurface, jp2info);
   let shader = new ShaderMaterial({
     uniforms: {
       tex: { value: texture },
@@ -102,8 +163,9 @@ async function CreatePlaneWithTexture(texture: Texture, jp2Meta: HelioviewerJp2M
   shader.transparent = true;
   shader.blending = AdditiveBlending;
   const mesh = new Mesh(geometry, shader);
-  mesh.position.setX(jp2Meta.sceneOffsetX());
-  mesh.position.setY(jp2Meta.sceneOffsetY());
+  if (!projectToSolarSurface) {
+    mesh.position.set(jp2Meta.sceneOffsetX(), jp2Meta.sceneOffsetY(), 0);
+  }
   // API expects all meshes to be groups, so add this mesh to a single group
   const group = new Group();
   group.add(mesh);
@@ -132,9 +194,19 @@ function UpdateModelTexture(
     ) {
       model.material.uniforms.tex.value = texture;
       if (PLANE_SOURCES.indexOf(source) != -1) {
-        let dimensions = _getPlaneDimensionsFromJp2Info(jp2info);
-        model.geometry.width = dimensions.width;
-        model.geometry.height = dimensions.height;
+        model.geometry.dispose();
+        const projectToSolarSurface =
+          SURFACE_PLANE_SOURCES.indexOf(source) !== -1;
+        model.geometry = _createPlaneGeometry(
+          jp2Meta,
+          projectToSolarSurface,
+          jp2info,
+        );
+        if (projectToSolarSurface) {
+          model.position.set(0, 0, 0);
+        } else {
+          model.position.set(jp2Meta.sceneOffsetX(), jp2Meta.sceneOffsetY(), 0);
+        }
         model.updateMatrix();
       } else {
         CopyUniforms(model.material.uniforms, GenerateSphericalModelUniforms(texture, jp2Meta, jp2info, model.material.uniforms.opacity.value, model.material.uniforms.backside.value));
